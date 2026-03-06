@@ -36,3 +36,8 @@ output "services_range_name" {
   description = "The name of the secondary range for GKE services"
   value       = "services"
 }
+
+output "private_vpc_connection_id" {
+  description = "ID of the VPC peering connection (pass to database module to ensure peering exists before Cloud SQL creation)"
+  value       = google_service_networking_connection.private_vpc_connection.id
+}
