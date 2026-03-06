@@ -1,0 +1,59 @@
+---
+# k8s-tools role: install kubectl, helm, argocd CLI, tofu, and gcloud CLI
+
+- name: Install kubectl
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: "0755"
+
+- name: Download Helm archive
+  ansible.builtin.unarchive:
+    src: "https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz"
+    dest: /tmp
+    remote_src: true
+  notify: move helm binary
+
+- name: Install ArgoCD CLI
+  ansible.builtin.get_url:
+    url: "https://github.com/argoproj/argo-cd/releases/download/{{ argocd_version }}/argocd-linux-amd64"
+    dest: /usr/local/bin/argocd
+    mode: "0755"
+
+- name: Download OpenTofu archive
+  ansible.builtin.get_url:
+    url: "https://github.com/opentofu/opentofu/releases/download/v{{ tofu_version }}/tofu_{{ tofu_version }}_linux_amd64.zip"
+    dest: /tmp/tofu.zip
+    mode: "0644"
+  notify: unzip tofu binary
+
+- name: Add Google Cloud SDK apt key
+  ansible.builtin.apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add Google Cloud SDK apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb https://packages.cloud.google.com/apt cloud-sdk main"
+    state: present
+    filename: google-cloud-sdk
+
+- name: Install gcloud CLI and GKE auth plugin
+  ansible.builtin.apt:
+    name:
+      - google-cloud-cli
+      - google-cloud-cli-gke-gcloud-auth-plugin
+    state: present
+    update_cache: true
+
+- name: Verify installed tools
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - kubectl version --client
+    - helm version --short
+    - argocd version --client
+    - tofu version
+    - gcloud version
+  register: tool_versions
+  changed_when: false
+  failed_when: false

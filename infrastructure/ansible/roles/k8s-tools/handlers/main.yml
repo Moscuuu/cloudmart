@@ -1,0 +1,27 @@
+---
+- name: move helm binary
+  block:
+    - name: Copy helm to /usr/local/bin
+      ansible.builtin.copy:
+        src: /tmp/linux-amd64/helm
+        dest: /usr/local/bin/helm
+        mode: "0755"
+        remote_src: true
+
+    - name: Clean up helm temp directory
+      ansible.builtin.file:
+        path: /tmp/linux-amd64
+        state: absent
+
+- name: unzip tofu binary
+  block:
+    - name: Extract tofu to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/tofu.zip
+        dest: /usr/local/bin
+        remote_src: true
+
+    - name: Clean up tofu zip
+      ansible.builtin.file:
+        path: /tmp/tofu.zip
+        state: absent

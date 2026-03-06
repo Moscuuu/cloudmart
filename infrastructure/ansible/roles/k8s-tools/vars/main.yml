@@ -1,0 +1,13 @@
+---
+# Pin tool versions for reproducibility
+# Update these when upgrading tools
+# Check for latest versions at release pages:
+#   kubectl: https://dl.k8s.io/release/stable.txt
+#   helm:    https://github.com/helm/helm/releases
+#   argocd:  https://github.com/argoproj/argo-cd/releases
+#   tofu:    https://github.com/opentofu/opentofu/releases
+
+kubectl_version: "v1.31.4"
+helm_version: "v3.17.1"
+argocd_version: "v2.14.3"
+tofu_version: "1.11.5"
