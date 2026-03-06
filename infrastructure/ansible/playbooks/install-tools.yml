@@ -1,0 +1,8 @@
+---
+# Standalone playbook for tool installation only (skips SSH hardening)
+# Use when you only need to update or reinstall tools on the bastion host
+- name: Install Kubernetes tools on bastion
+  hosts: bastion
+  become: true
+  roles:
+    - k8s-tools

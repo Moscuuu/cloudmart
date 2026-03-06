@@ -1,0 +1,31 @@
+---
+- name: Configure bastion host for CloudMart
+  hosts: bastion
+  become: true
+
+  pre_tasks:
+    - name: Display target environment
+      ansible.builtin.debug:
+        msg: "Configuring bastion for {{ environment_name }} environment"
+
+  roles:
+    - common
+    - k8s-tools
+
+  post_tasks:
+    - name: Display installed tool versions
+      ansible.builtin.command: "{{ item }}"
+      loop:
+        - kubectl version --client --short
+        - helm version --short
+        - argocd version --client
+        - tofu version
+      register: versions
+      changed_when: false
+
+    - name: Show versions
+      ansible.builtin.debug:
+        msg: "{{ item.stdout }}"
+      loop: "{{ versions.results }}"
+      loop_control:
+        label: "{{ item.item }}"

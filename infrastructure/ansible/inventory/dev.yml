@@ -1,0 +1,20 @@
+---
+# CloudMart Dev Environment Inventory
+#
+# Connection methods:
+# 1. Direct SSH (if external IP accessible): set ansible_host to bastion external IP
+# 2. IAP tunnel (recommended): use ProxyCommand with gcloud (see ansible_ssh_common_args)
+#
+# After running `tofu output` in the dev environment, update:
+#   - ansible_host with the bastion external IP
+#   - ansible_user with your OS Login username
+
+all:
+  hosts:
+    bastion:
+      ansible_host: "BASTION_IP"  # UPDATE: Set to bastion external IP from tofu output
+      ansible_user: "YOUR_USERNAME"  # UPDATE: Set to OS Login username
+      ansible_ssh_common_args: '-o ProxyCommand="gcloud compute ssh %h --zone=us-central1-a --tunnel-through-iap --command=''nc %r %p''"'
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    environment_name: dev
