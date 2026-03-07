@@ -1,0 +1,140 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup batch script, version 3.3.2
+#
+# Optional ENV vars
+#   JAVA_HOME - location of a JDK home dir, required when download maven via java source
+#   MVNW_REPOURL - repo url base for downloading maven distribution
+#   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+#   MVNW_VERBOSE - true: enable verbose log; debug: trace the mvnw script; others: silence the output
+# ----------------------------------------------------------------------------
+
+set -euf
+[ "${MVNW_VERBOSE-}" != debug ] || set -x
+
+# OS specific support.
+native_path() { printf %s\\n "$1"; }
+case "$(uname)" in
+CYGWIN* | MINGW*)
+  [ -z "${JAVA_HOME-}" ] || JAVA_HOME="$(cygpath --unix "$JAVA_HOME")"
+  native_path() { cygpath --path --windows "$1"; }
+  ;;
+esac
+
+# set JAVA_CMD
+# https://stackoverflow.com/questions/7334754/correct-way-to-check-java-version-from-bash-script
+JAVA_CMD=java
+if [ -n "${JAVA_HOME-}" ]; then
+  if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+    # IBM's JDK on AIX uses strange locations for the executables
+    JAVA_CMD="$JAVA_HOME/jre/sh/java"
+  else
+    JAVA_CMD="$JAVA_HOME/bin/java"
+  fi
+  if [ ! -x "$JAVA_CMD" ]; then
+    die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
+  fi
+fi
+
+# hash://
+distributionUrl="${MVNW_REPOURL-https://repo.maven.apache.org/maven2}/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.zip"
+jarUrl="${MVNW_REPOURL-https://repo.maven.apache.org/maven2}/org/apache/maven/wrapper/maven-wrapper/3.3.2/maven-wrapper-3.3.2.jar"
+wrapperJarPath="$(dirname -- "$0")/.mvn/wrapper/maven-wrapper.jar"
+wrapperPropertiesPath="$(dirname -- "$0")/.mvn/wrapper/maven-wrapper.properties"
+
+# Read distributionUrl and wrapperUrl from maven-wrapper.properties if it exists
+if [ -r "$wrapperPropertiesPath" ]; then
+  while IFS='=' read -r key value; do
+    case "${key-}" in
+    distributionUrl) distributionUrl="${value-}" ;;
+    wrapperUrl) jarUrl="${value-}" ;;
+    esac
+  done < "$wrapperPropertiesPath"
+fi
+
+# Maven installation
+MAVEN_HOME="${MAVEN_HOME:-${HOME}/.m2/wrapper/dists/apache-maven-3.9.9}"
+
+if [ -d "$MAVEN_HOME" ] && [ -x "$MAVEN_HOME/bin/mvn" ]; then
+  MVN_CMD="$MAVEN_HOME/bin/mvn"
+else
+  # Download and install maven
+  TMP_DOWNLOAD_DIR="$(mktemp -d)" || die "Failed to create temp directory"
+  trap 'rm -rf -- "$TMP_DOWNLOAD_DIR"' HUP INT TERM EXIT
+
+  if command -v wget > /dev/null 2>&1; then
+    DOWNLOAD_CMD="wget"
+    if [ "${MVNW_VERBOSE-}" = true ]; then
+      QUIET=""
+    else
+      QUIET="--quiet"
+    fi
+    if [ -n "${MVNW_USERNAME-}" ] && [ -n "${MVNW_PASSWORD-}" ]; then
+      WGET_AUTH="--http-user=${MVNW_USERNAME} --http-password=${MVNW_PASSWORD}"
+    else
+      WGET_AUTH=""
+    fi
+  elif command -v curl > /dev/null 2>&1; then
+    DOWNLOAD_CMD="curl"
+    if [ "${MVNW_VERBOSE-}" = true ]; then
+      QUIET=""
+    else
+      QUIET="--silent"
+    fi
+    if [ -n "${MVNW_USERNAME-}" ] && [ -n "${MVNW_PASSWORD-}" ]; then
+      CURL_AUTH="-u ${MVNW_USERNAME}:${MVNW_PASSWORD}"
+    else
+      CURL_AUTH=""
+    fi
+  else
+    die "ERROR: Neither wget nor curl found. Please install one of them."
+  fi
+
+  ZIP_FILE="$TMP_DOWNLOAD_DIR/maven.zip"
+  [ "${MVNW_VERBOSE-}" != true ] || echo "Downloading Maven from: $distributionUrl"
+
+  if [ "$DOWNLOAD_CMD" = "wget" ]; then
+    wget $QUIET $WGET_AUTH -O "$ZIP_FILE" "$distributionUrl" || die "Failed to download Maven"
+  else
+    curl $QUIET $CURL_AUTH -fL -o "$ZIP_FILE" "$distributionUrl" || die "Failed to download Maven"
+  fi
+
+  MAVEN_HOME_PARENT="$(dirname -- "$MAVEN_HOME")"
+  mkdir -p "$MAVEN_HOME_PARENT" || die "Failed to create $MAVEN_HOME_PARENT"
+
+  if command -v unzip > /dev/null 2>&1; then
+    unzip -q "$ZIP_FILE" -d "$MAVEN_HOME_PARENT"
+  elif command -v jar > /dev/null 2>&1; then
+    (cd "$MAVEN_HOME_PARENT" && jar xf "$ZIP_FILE")
+  elif "$JAVA_CMD" -version 2>&1 | grep -iq 'IBM'; then
+    "$JAVA_CMD" -jar "$ZIP_FILE" -d "$MAVEN_HOME_PARENT"
+  else
+    die "ERROR: No unzip, jar, or java command found to extract Maven."
+  fi
+
+  MVN_CMD="$MAVEN_HOME/bin/mvn"
+fi
+
+[ -x "$MVN_CMD" ] || chmod +x "$MVN_CMD"
+exec "$MVN_CMD" "$@"

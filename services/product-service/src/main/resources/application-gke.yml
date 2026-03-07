@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/productdb
+    username: cloudmart
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 2
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  sql:
+    init:
+      mode: never
+  docker:
+    compose:
+      enabled: false

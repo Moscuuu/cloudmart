@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: product-service
+  jpa:
+    open-in-view: false
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
