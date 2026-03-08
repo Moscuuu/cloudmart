@@ -9,6 +9,7 @@ import redis.asyncio as aioredis
 from fastapi import FastAPI
 
 from order_service.config import settings
+from order_service.routers.availability import router as availability_router
 from order_service.routers.orders import router as orders_router
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,7 @@ app = FastAPI(
 
 
 app.include_router(orders_router)
+app.include_router(availability_router)
 
 
 @app.get("/health")

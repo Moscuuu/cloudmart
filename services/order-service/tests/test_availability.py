@@ -121,6 +121,9 @@ class TestCacheService:
         broken_redis.get = AsyncMock(
             side_effect=aioredis.ConnectionError("Redis down")
         )
+        broken_redis.setex = AsyncMock(
+            side_effect=aioredis.ConnectionError("Redis down")
+        )
 
         service = CacheService(broken_redis, mock_product_client)
         result = await service.get_availability("prod-fallback")
