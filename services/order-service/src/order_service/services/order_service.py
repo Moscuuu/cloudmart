@@ -1,6 +1,10 @@
 """Order business logic service."""
 
+from __future__ import annotations
+
+import logging
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,17 +15,27 @@ from order_service.repositories.order_repository import OrderRepository
 from order_service.schemas.order import CreateOrderRequest
 from order_service.services.product_client import ProductClient
 
+if TYPE_CHECKING:
+    from order_service.services.pubsub_publisher import PubSubPublisher
+
+logger = logging.getLogger(__name__)
+
 
 class OrderService:
     """Orchestrates order creation with cross-service stock validation."""
 
     def __init__(
-        self, session: AsyncSession, http_client: httpx.AsyncClient
+        self,
+        session: AsyncSession,
+        http_client: httpx.AsyncClient,
+        *,
+        pubsub_publisher: PubSubPublisher | None = None,
     ) -> None:
         self.session = session
         self.http_client = http_client
         self.repository = OrderRepository(session)
         self.product_client = ProductClient(http_client)
+        self._pubsub_publisher = pubsub_publisher
 
     async def create_order(self, request: CreateOrderRequest) -> Order:
         """Create an order after validating stock for all items.
@@ -66,4 +80,22 @@ class OrderService:
             items=order_items,
         )
 
-        return await self.repository.create(order)
+        order = await self.repository.create(order)
+
+        # Step 4: Publish order-placed events and confirm
+        if self._pubsub_publisher is not None:
+            try:
+                await self._pubsub_publisher.publish_order_placed(
+                    str(order.id), order.items
+                )
+                order.status = OrderStatus.CONFIRMED
+                await self.session.flush()
+                await self.session.refresh(order)
+            except Exception:
+                logger.warning(
+                    "Pub/Sub publish failed for order %s; staying PENDING",
+                    order.id,
+                    exc_info=True,
+                )
+
+        return order

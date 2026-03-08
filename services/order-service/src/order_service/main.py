@@ -1,5 +1,7 @@
 """FastAPI application for Order Service."""
 
+import logging
+import os
 from contextlib import asynccontextmanager
 
 import httpx
@@ -8,6 +10,8 @@ from fastapi import FastAPI
 
 from order_service.config import settings
 from order_service.routers.orders import router as orders_router
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -21,6 +25,20 @@ async def lifespan(app: FastAPI):
         base_url=settings.product_service_url,
         timeout=5.0,
     )
+
+    # Pub/Sub publisher -- create when emulator is configured or in non-local envs
+    app.state.pubsub_publisher = None
+    if settings.pubsub_emulator_host or settings.environment != "local":
+        from order_service.services.pubsub_publisher import PubSubPublisher
+
+        publisher = PubSubPublisher(settings.gcp_project_id)
+        if settings.pubsub_emulator_host:
+            os.environ.setdefault(
+                "PUBSUB_EMULATOR_HOST", settings.pubsub_emulator_host
+            )
+            await publisher.ensure_topic()
+        app.state.pubsub_publisher = publisher
+        logger.info("Pub/Sub publisher initialized for project %s", settings.gcp_project_id)
 
     yield
 

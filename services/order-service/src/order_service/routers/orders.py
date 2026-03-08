@@ -25,7 +25,8 @@ async def create_order(
 ):
     """Create a new order with stock validation."""
     http_client = request.app.state.http_client
-    service = OrderService(db, http_client)
+    pubsub_publisher = getattr(request.app.state, "pubsub_publisher", None)
+    service = OrderService(db, http_client, pubsub_publisher=pubsub_publisher)
     order = await service.create_order(body)
     return order
 

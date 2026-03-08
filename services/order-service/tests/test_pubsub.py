@@ -89,10 +89,14 @@ class TestPubSubPublisher:
         assert data["productId"] == str(product_id)
         assert data["quantity"] == 5
 
-    async def test_publish_failure_does_not_raise(
+    async def test_publish_failure_raises(
         self, publisher, mock_publisher_client
     ):
-        """If publishing fails, the method should not raise (graceful degradation)."""
+        """If publishing fails, the exception propagates to the caller.
+
+        OrderService catches this to keep the order PENDING (graceful degradation
+        is handled at the service layer, not the publisher layer).
+        """
         mock_publisher_client.publish.side_effect = Exception("Pub/Sub down")
 
         items = [
@@ -102,8 +106,8 @@ class TestPubSubPublisher:
             ),
         ]
 
-        # Should not raise
-        await publisher.publish_order_placed(str(uuid4()), items)
+        with pytest.raises(Exception, match="Pub/Sub down"):
+            await publisher.publish_order_placed(str(uuid4()), items)
 
 
 # ---------------------------------------------------------------------------
