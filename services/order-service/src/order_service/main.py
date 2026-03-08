@@ -41,6 +41,11 @@ async def lifespan(app: FastAPI):
         app.state.pubsub_publisher = publisher
         logger.info("Pub/Sub publisher initialized for project %s", settings.gcp_project_id)
 
+    logger.info(
+        "Order Service started (OTel auto-instrumentation: %s)",
+        "enabled" if os.environ.get("OTEL_SERVICE_NAME") else "not configured",
+    )
+
     yield
 
     # Shutdown
