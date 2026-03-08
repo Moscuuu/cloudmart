@@ -87,6 +87,12 @@ async def async_client(engine) -> AsyncGenerator[AsyncClient, None]:
 
     app.dependency_overrides[get_db] = override_get_db
 
+    # Point the module-level engine at the test DB so /ready endpoint works
+    import order_service.database as _db_mod
+
+    _original_engine = _db_mod.engine
+    _db_mod.engine = engine
+
     # Provide a default mock http_client so routes that need it don't fail
     if not hasattr(app.state, "http_client") or app.state.http_client is None:
         app.state.http_client = AsyncMock(spec=httpx.AsyncClient)
@@ -96,6 +102,7 @@ async def async_client(engine) -> AsyncGenerator[AsyncClient, None]:
         yield client
 
     app.dependency_overrides.clear()
+    _db_mod.engine = _original_engine
 
 
 # Redis container - module-level for sharing

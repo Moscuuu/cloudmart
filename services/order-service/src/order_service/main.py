@@ -67,4 +67,26 @@ app.include_router(availability_router)
 @app.get("/health")
 async def health_check():
     """Return service health status."""
-    return {"status": "healthy", "service": "order-service"}
+    return {"status": "healthy", "service": "order-service", "version": "1.0.0"}
+
+
+@app.get("/ready")
+async def readiness_check():
+    """Check service readiness by verifying database connectivity."""
+    from order_service.database import engine
+
+    try:
+        from sqlalchemy import text
+
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception:
+        db_status = "unavailable"
+
+    ready = db_status == "connected"
+    return {
+        "ready": ready,
+        "service": "order-service",
+        "checks": {"database": db_status},
+    }
