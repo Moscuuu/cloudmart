@@ -7,6 +7,7 @@ import redis.asyncio as aioredis
 from fastapi import FastAPI
 
 from order_service.config import settings
+from order_service.routers.orders import router as orders_router
 
 
 @asynccontextmanager
@@ -35,11 +36,10 @@ app = FastAPI(
 )
 
 
+app.include_router(orders_router)
+
+
 @app.get("/health")
 async def health_check():
     """Return service health status."""
     return {"status": "healthy", "service": "order-service"}
-
-
-# Future router mounts:
-# app.include_router(orders.router, prefix="/api/v1/orders", tags=["orders"])

@@ -49,6 +49,7 @@ async def engine():
     url = _get_db_url()
     eng = create_async_engine(url, echo=False)
     async with eng.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield eng
     await eng.dispose()
@@ -68,6 +69,10 @@ async def async_db_session(engine) -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 async def async_client(engine) -> AsyncGenerator[AsyncClient, None]:
     """Provide an async HTTP client for FastAPI testing."""
+    from unittest.mock import AsyncMock
+
+    import httpx
+
     from order_service.database import get_db
     from order_service.main import app
 
@@ -81,6 +86,10 @@ async def async_client(engine) -> AsyncGenerator[AsyncClient, None]:
             await session.commit()
 
     app.dependency_overrides[get_db] = override_get_db
+
+    # Provide a default mock http_client so routes that need it don't fail
+    if not hasattr(app.state, "http_client") or app.state.http_client is None:
+        app.state.http_client = AsyncMock(spec=httpx.AsyncClient)
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:

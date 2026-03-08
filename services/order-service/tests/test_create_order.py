@@ -54,6 +54,7 @@ def _mock_inventory_response(product_id: str, available: int) -> httpx.Response:
             "reserved_quantity": 5,
             "available_quantity": available,
         },
+        request=httpx.Request("GET", f"http://mock/api/v1/inventory/{product_id}"),
     )
 
 
@@ -211,6 +212,7 @@ async def test_create_order_calculates_total(
                 "reserved_quantity": 0,
                 "available_quantity": 100,
             },
+            request=httpx.Request("GET", f"http://mock{url}"),
         )
 
     mock_http_client.get = AsyncMock(side_effect=mock_get)
@@ -257,6 +259,7 @@ async def test_create_order_stores_product_name(
                 "reserved_quantity": 0,
                 "available_quantity": 100,
             },
+            request=httpx.Request("GET", f"http://mock{url}"),
         )
 
     mock_http_client.get = AsyncMock(side_effect=mock_get)
