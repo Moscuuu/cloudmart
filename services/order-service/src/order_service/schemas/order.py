@@ -3,6 +3,8 @@
 from datetime import datetime
 from uuid import UUID
 
+from decimal import Decimal
+
 from pydantic import BaseModel, Field
 
 from order_service.models.order import OrderStatus
@@ -12,7 +14,9 @@ class OrderItemRequest(BaseModel):
     """Request schema for creating an order item."""
 
     product_id: UUID
+    product_name: str = Field(min_length=1, max_length=255)
     quantity: int = Field(gt=0, description="Must be greater than 0")
+    unit_price: Decimal = Field(gt=0, description="Price per unit")
 
 
 class CreateOrderRequest(BaseModel):
