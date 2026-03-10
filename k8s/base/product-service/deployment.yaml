@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  labels:
+    app: product-service
+spec:
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      serviceAccountName: product-service
+      containers:
+        - name: product-service
+          image: product-service
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: product-service-config
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: gke
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
