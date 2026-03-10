@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudmart-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudmart
+    environment: dev
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Moscuuu/cloudmart.git
+    targetRevision: main
+    path: k8s/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
