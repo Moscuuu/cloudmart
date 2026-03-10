@@ -1,0 +1,73 @@
+name: Promote to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to promote'
+        required: true
+        type: choice
+        options:
+          - product-service
+          - order-service
+          - frontend
+      image_tag:
+        description: 'Image tag (git SHA, must be verified in staging first)'
+        required: true
+        type: string
+      confirm:
+        description: 'Type "DEPLOY" to confirm production deployment'
+        required: true
+        type: string
+
+env:
+  REGISTRY: us-east1-docker.pkg.dev
+  PROJECT_ID: project-0042e987-ac93-43ec-a4f
+  REPOSITORY: cloudmart-docker
+
+jobs:
+  promote:
+    if: inputs.confirm == 'DEPLOY'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update prod overlay
+        env:
+          SERVICE: ${{ inputs.service }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          cd k8s/overlays/prod
+          kustomize edit set image "${SERVICE}=${REGISTRY}/${PROJECT_ID}/${REPOSITORY}/${SERVICE}:${IMAGE_TAG}"
+
+      - name: Create promotion PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: promote/${{ inputs.service }}/prod-${{ inputs.image_tag }}
+          title: "promote(${{ inputs.service }}): prod <- ${{ inputs.image_tag }}"
+          body: |
+            ## PRODUCTION DEPLOYMENT
+
+            > **WARNING:** This PR updates the production environment. Ensure the image has been verified in staging before merging.
+
+            | Field | Value |
+            |-------|-------|
+            | **Service** | `${{ inputs.service }}` |
+            | **Image Tag** | `${{ inputs.image_tag }}` |
+            | **Triggered by** | @${{ github.actor }} |
+            | **Build Run** | [View build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+
+            ### What happens next
+
+            1. Review and approve this PR
+            2. Merge to update the production overlay
+            3. ArgoCD manual sync required after merge to deploy to production
+          commit-message: "chore(prod): update ${{ inputs.service }} to ${{ inputs.image_tag }} [skip ci]"
+          labels: promotion,production

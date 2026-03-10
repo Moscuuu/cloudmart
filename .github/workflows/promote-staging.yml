@@ -1,0 +1,65 @@
+name: Promote to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to promote'
+        required: true
+        type: choice
+        options:
+          - product-service
+          - order-service
+          - frontend
+      image_tag:
+        description: 'Image tag (git SHA from successful dev build)'
+        required: true
+        type: string
+
+env:
+  REGISTRY: us-east1-docker.pkg.dev
+  PROJECT_ID: project-0042e987-ac93-43ec-a4f
+  REPOSITORY: cloudmart-docker
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update staging overlay
+        env:
+          SERVICE: ${{ inputs.service }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          cd k8s/overlays/staging
+          kustomize edit set image "${SERVICE}=${REGISTRY}/${PROJECT_ID}/${REPOSITORY}/${SERVICE}:${IMAGE_TAG}"
+
+      - name: Create promotion PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: promote/${{ inputs.service }}/staging-${{ inputs.image_tag }}
+          title: "promote(${{ inputs.service }}): staging <- ${{ inputs.image_tag }}"
+          body: |
+            ## Staging Promotion
+
+            | Field | Value |
+            |-------|-------|
+            | **Service** | `${{ inputs.service }}` |
+            | **Image Tag** | `${{ inputs.image_tag }}` |
+            | **Triggered by** | @${{ github.actor }} |
+            | **Build Run** | [View build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+
+            ### What happens next
+
+            1. Review and merge this PR to update the staging overlay
+            2. ArgoCD manual sync required after merge to deploy to staging
+          commit-message: "chore(staging): update ${{ inputs.service }} to ${{ inputs.image_tag }} [skip ci]"
+          labels: promotion,staging
