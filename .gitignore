@@ -35,6 +35,10 @@ __pycache__/
 .venv/
 *.egg-info/
 
+# Node.js / Frontend
+node_modules/
+dist/
+
 # OS
 .DS_Store
 Thumbs.db
