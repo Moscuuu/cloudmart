@@ -1,4 +1,3 @@
-import { toast } from 'sonner';
 import { ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,8 @@ import {
 } from '@/components/ui/table';
 import { ProductImageGallery } from './ProductImageGallery';
 import { StockBadge } from './StockBadge';
+import { useCart } from '@/hooks/use-cart';
+import { useInventory } from '@/hooks/use-products';
 import type { ProductResponse } from '@/types/product';
 
 const priceFormatter = new Intl.NumberFormat('en-US', {
@@ -23,13 +24,29 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
 });
 
+/** Generate a deterministic picsum URL for a product (matches ProductCard). */
+function productImageUrl(productId: string): string {
+  const seed = productId.replace(/-/g, '').slice(0, 8);
+  return `https://picsum.photos/seed/${seed}/600/600`;
+}
+
 interface ProductDetailProps {
   product: ProductResponse;
 }
 
 export function ProductDetail({ product }: ProductDetailProps) {
+  const { addItem, items } = useCart();
+  const { data: inventory } = useInventory(product.id);
+  const isOutOfStock = inventory?.availableQuantity === 0;
+  const cartItem = items.find((i) => i.productId === product.id);
+
   const handleAddToCart = () => {
-    toast.success(`Added ${product.name} to cart`);
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: productImageUrl(product.id),
+    });
   };
 
   return (
@@ -63,10 +80,15 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <Button
             size="lg"
             onClick={handleAddToCart}
-            className="mt-2 min-h-[44px] cursor-pointer"
+            disabled={isOutOfStock}
+            className="mt-2 min-h-[44px] cursor-pointer disabled:cursor-not-allowed"
           >
             <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-            Add to Cart
+            {isOutOfStock
+              ? 'Out of Stock'
+              : cartItem
+                ? `In Cart (${cartItem.quantity}) - Add More`
+                : 'Add to Cart'}
           </Button>
 
           {/* Specs table */}

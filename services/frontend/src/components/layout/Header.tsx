@@ -1,9 +1,9 @@
 import { Link } from 'react-router';
-import { Menu, ShoppingCart, Package } from 'lucide-react';
+import { Menu, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useState } from 'react';
 
 const NAV_LINKS = [
@@ -13,8 +13,6 @@ const NAV_LINKS = [
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  // Cart count will be wired to CartProvider in a future plan
-  const cartCount = 0;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -41,42 +39,12 @@ export function Header() {
               {link.label}
             </Button>
           ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            render={<Link to="/cart" aria-label={`Cart with ${cartCount} items`} />}
-            className="relative cursor-pointer"
-          >
-            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-            {cartCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs"
-              >
-                {cartCount}
-              </Badge>
-            )}
-          </Button>
+          <CartDrawer />
         </nav>
 
         {/* Mobile nav */}
         <div className="flex items-center gap-2 md:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            render={<Link to="/cart" aria-label={`Cart with ${cartCount} items`} />}
-            className="relative cursor-pointer"
-          >
-            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-            {cartCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs"
-              >
-                {cartCount}
-              </Badge>
-            )}
-          </Button>
+          <CartDrawer />
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger

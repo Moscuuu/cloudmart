@@ -6,12 +6,9 @@ import { AlertTriangle } from 'lucide-react';
 
 import { HomePage } from '@/pages/HomePage';
 import { ProductPage } from '@/pages/ProductPage';
+import { CartPage } from '@/pages/CartPage';
 
 /* -- Placeholder pages (replaced in later plans) -- */
-
-function CartPage() {
-  return <h1 className="text-2xl font-semibold">Cart</h1>;
-}
 
 function CheckoutPage() {
   return <h1 className="text-2xl font-semibold">Checkout</h1>;
