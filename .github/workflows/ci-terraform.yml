@@ -1,0 +1,153 @@
+# Terraform CI/CD Pipeline
+# Manages dev environment infrastructure only.
+# Staging/prod Terraform is applied manually or via separate workflow_dispatch workflows.
+
+name: Terraform CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths: ['infrastructure/terraform/**']
+  pull_request:
+    branches: [main]
+    paths: ['infrastructure/terraform/**']
+
+env:
+  TF_WORKING_DIR: infrastructure/terraform/environments/dev
+  TOFU_VERSION: '1.11.5'
+  PROJECT_ID: project-0042e987-ac93-43ec-a4f
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Terraform Plan
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: cloudmart-ci@project-0042e987-ac93-43ec-a4f.iam.gserviceaccount.com
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: true
+
+      - name: Initialize OpenTofu
+        run: tofu init -backend-config="bucket=cloudmart-tfstate-${PROJECT_ID}"
+
+      - name: Plan infrastructure changes
+        id: plan
+        continue-on-error: true
+        run: tofu plan -no-color -out=tfplan
+
+      - name: Post plan to PR
+        uses: actions/github-script@v7
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
+          PLAN_STDERR: ${{ steps.plan.outputs.stderr }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const planOutput = process.env.PLAN_OUTPUT || '';
+            const planStderr = process.env.PLAN_STDERR || '';
+            const planOutcome = process.env.PLAN_OUTCOME;
+
+            // Detect destructive operations
+            const hasDestroy = planOutput.includes('will be destroyed') || planOutput.includes('must be replaced');
+            const warningLine = hasDestroy ? '\n\n**WARNING: This plan includes destructive changes!**\n' : '';
+
+            const statusIcon = planOutcome === 'success' ? '✅' : '❌';
+
+            const body = `### ${statusIcon} OpenTofu Plan
+            *Actor: @${context.actor} | Event: \`${context.eventName}\`*
+            ${warningLine}
+            <details><summary>Show Plan Output</summary>
+
+            \`\`\`hcl
+            ${planOutput}
+            \`\`\`
+
+            </details>
+
+            ${planStderr ? `<details><summary>Show Errors</summary>\n\n\`\`\`\n${planStderr}\n\`\`\`\n\n</details>` : ''}`;
+
+            // Find existing bot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('OpenTofu Plan')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
+
+      - name: Fail on plan error
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+  apply:
+    name: Terraform Apply
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: cloudmart-ci@project-0042e987-ac93-43ec-a4f.iam.gserviceaccount.com
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: true
+
+      - name: Initialize OpenTofu
+        run: tofu init -backend-config="bucket=cloudmart-tfstate-${PROJECT_ID}"
+
+      - name: Apply infrastructure changes
+        run: tofu apply -auto-approve
