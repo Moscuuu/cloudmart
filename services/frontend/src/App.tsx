@@ -5,12 +5,9 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 
 import { HomePage } from '@/pages/HomePage';
+import { ProductPage } from '@/pages/ProductPage';
 
 /* -- Placeholder pages (replaced in later plans) -- */
-
-function ProductPage() {
-  return <h1 className="text-2xl font-semibold">Product Detail</h1>;
-}
 
 function CartPage() {
   return <h1 className="text-2xl font-semibold">Cart</h1>;
