@@ -11,13 +11,13 @@ resources:
 
 images:
   - name: product-service
-    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-dev/product-service
+    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-docker/product-service
     newTag: latest
   - name: order-service
-    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-dev/order-service
+    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-docker/order-service
     newTag: latest
   - name: frontend
-    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-dev/frontend
+    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-docker/frontend
     newTag: latest
 
 patches:
