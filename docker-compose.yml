@@ -1,0 +1,96 @@
+services:
+  product-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: productdb
+      POSTGRES_USER: cloudmart
+      POSTGRES_PASSWORD: localdev
+    ports:
+      - "5432:5432"
+    volumes:
+      - product-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudmart -d productdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  order-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: orderdb
+      POSTGRES_USER: cloudmart
+      POSTGRES_PASSWORD: localdev
+    ports:
+      - "5433:5432"
+    volumes:
+      - order-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudmart -d orderdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  pubsub-emulator:
+    image: google/cloud-sdk:emulators
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+    ports:
+      - "8085:8085"
+
+  product-service:
+    build: services/product-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://product-db:5432/productdb
+      SPRING_DATASOURCE_USERNAME: cloudmart
+      SPRING_DATASOURCE_PASSWORD: localdev
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+      OTEL_TRACES_EXPORTER: none
+    depends_on:
+      product-db:
+        condition: service_healthy
+
+  order-service:
+    build: services/order-service
+    command: sh -c "alembic upgrade head && opentelemetry-instrument uvicorn order_service.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://cloudmart:localdev@order-db:5432/orderdb
+      REDIS_URL: redis://redis:6379/0
+      PRODUCT_SERVICE_URL: http://product-service:8080
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      GCP_PROJECT_ID: local-project
+      ENVIRONMENT: local
+      OTEL_TRACES_EXPORTER: none
+    depends_on:
+      order-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+
+  frontend:
+    build: services/frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - product-service
+      - order-service
+
+volumes:
+  product-pgdata:
+  order-pgdata:
