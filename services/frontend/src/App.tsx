@@ -4,11 +4,9 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 
-/* -- Placeholder pages (replaced in later plans) -- */
+import { HomePage } from '@/pages/HomePage';
 
-function HomePage() {
-  return <h1 className="text-2xl font-semibold">Products</h1>;
-}
+/* -- Placeholder pages (replaced in later plans) -- */
 
 function ProductPage() {
   return <h1 className="text-2xl font-semibold">Product Detail</h1>;
