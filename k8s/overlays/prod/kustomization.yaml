@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: prod
+
+resources:
+  - ../../base/product-service
+  - ../../base/order-service
+  - ../../base/frontend
+  - ../../base/redis
+
+images:
+  - name: product-service
+    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-dev/product-service
+    newTag: latest
+  - name: order-service
+    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-dev/order-service
+    newTag: latest
+  - name: frontend
+    newName: us-east1-docker.pkg.dev/PROJECT_ID/cloudmart-dev/frontend
+    newTag: latest
+
+patches:
+  - path: patches/product-service.yaml
+  - path: patches/order-service.yaml
+  - path: patches/frontend.yaml

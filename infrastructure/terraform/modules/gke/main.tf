@@ -38,6 +38,10 @@ resource "google_container_cluster" "primary" {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
 
+  gateway_api_config {
+    channel = "CHANNEL_STANDARD"
+  }
+
   # Ephemeral portfolio project -- disable deletion protection
   deletion_protection = false
 
