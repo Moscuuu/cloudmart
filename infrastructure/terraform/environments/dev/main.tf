@@ -89,3 +89,13 @@ module "bastion" {
   bastion_service_account = module.iam.bastion_service_account_email
   authorized_cidr         = var.authorized_cidr
 }
+
+# --- Workload Identity Federation (GitHub Actions OIDC auth) ---
+module "wif" {
+  source         = "../../modules/wif"
+  project_id     = var.project_id
+  project_name   = var.project_name
+  project_number = var.project_number
+  github_org     = var.github_org
+  github_repo    = var.github_repo
+}

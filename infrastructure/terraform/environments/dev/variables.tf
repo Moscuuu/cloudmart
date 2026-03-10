@@ -61,3 +61,21 @@ variable "master_cidr" {
   type        = string
   default     = "172.16.0.0/28"
 }
+
+# WIF (Workload Identity Federation)
+variable "project_number" {
+  description = "GCP project number for WIF provider path"
+  type        = string
+}
+
+variable "github_org" {
+  description = "GitHub organization or username"
+  type        = string
+  default     = "Moscuuu"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name"
+  type        = string
+  default     = "cloudmart"
+}
