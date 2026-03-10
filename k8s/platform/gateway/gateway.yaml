@@ -1,0 +1,26 @@
+# Shared Gateway for CloudMart
+#
+# This Gateway provisions a GKE Cloud Load Balancer automatically via
+# the gke-l7-global-external-managed GatewayClass (GKE-native controller).
+#
+# External IP is assigned by GCP and can be retrieved via:
+#   kubectl get gateway cloudmart-gateway -n gateway
+#
+# To add TLS later: add a second listener with protocol HTTPS, port 443,
+# and a certificateRef pointing to a Google-managed certificate.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cloudmart-gateway
+  namespace: gateway
+  labels:
+    app.kubernetes.io/part-of: cloudmart
+spec:
+  gatewayClassName: gke-l7-global-external-managed
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
