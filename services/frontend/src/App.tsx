@@ -7,20 +7,9 @@ import { AlertTriangle } from 'lucide-react';
 import { HomePage } from '@/pages/HomePage';
 import { ProductPage } from '@/pages/ProductPage';
 import { CartPage } from '@/pages/CartPage';
-
-/* -- Placeholder pages (replaced in later plans) -- */
-
-function CheckoutPage() {
-  return <h1 className="text-2xl font-semibold">Checkout</h1>;
-}
-
-function OrderConfirmationPage() {
-  return <h1 className="text-2xl font-semibold">Order Confirmation</h1>;
-}
-
-function OrderHistoryPage() {
-  return <h1 className="text-2xl font-semibold">Order History</h1>;
-}
+import { CheckoutPage } from '@/pages/CheckoutPage';
+import { OrderConfirmationPage } from '@/pages/OrderConfirmationPage';
+import { OrderHistoryPage } from '@/pages/OrderHistoryPage';
 
 /* -- Error boundary -- */
 

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ProductResponse, InventoryResponse } from '@/types/product';
+import { CartProvider } from '@/providers/CartProvider';
 
 vi.mock('@/api/products', () => ({
   fetchProducts: vi.fn().mockResolvedValue({ content: [], totalPages: 0, totalElements: 0, size: 20, number: 0, first: true, last: true, empty: true }),
@@ -45,11 +46,13 @@ function renderProductPage(productId = 'prod-001') {
   const queryClient = createTestQueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[`/products/${productId}`]}>
-        <Routes>
-          <Route path="/products/:id" element={<ProductPage />} />
-        </Routes>
-      </MemoryRouter>
+      <CartProvider>
+        <MemoryRouter initialEntries={[`/products/${productId}`]}>
+          <Routes>
+            <Route path="/products/:id" element={<ProductPage />} />
+          </Routes>
+        </MemoryRouter>
+      </CartProvider>
     </QueryClientProvider>,
   );
 }
