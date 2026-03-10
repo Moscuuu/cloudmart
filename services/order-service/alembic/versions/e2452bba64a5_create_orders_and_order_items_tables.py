@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ENUM, UUID
 
 
 # revision identifiers, used by Alembic.
@@ -21,8 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create orders and order_items tables."""
-    # Create orderstatus enum type
-    orderstatus_enum = sa.Enum('PENDING', 'CONFIRMED', 'CANCELLED', name='orderstatus')
+    orderstatus_enum = ENUM('PENDING', 'CONFIRMED', 'CANCELLED', name='orderstatus', create_type=False)
     orderstatus_enum.create(op.get_bind(), checkfirst=True)
 
     op.create_table(

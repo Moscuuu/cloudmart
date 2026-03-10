@@ -15,3 +15,7 @@ spring:
   docker:
     compose:
       enabled: true
+  cloud:
+    gcp:
+      pubsub:
+        enabled: false

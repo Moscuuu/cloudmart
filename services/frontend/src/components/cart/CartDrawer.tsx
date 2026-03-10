@@ -35,7 +35,7 @@ export function CartDrawer() {
           </Badge>
         )}
       </SheetTrigger>
-      <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
+      <SheetContent side="right" className="flex w-full flex-col p-6 sm:max-w-md">
         <SheetTitle className="text-lg font-semibold">
           Shopping Cart ({totalItems})
         </SheetTitle>
@@ -44,14 +44,14 @@ export function CartDrawer() {
           <EmptyCart />
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto -mx-6 px-6">
               <div className="divide-y divide-border">
                 {items.map((item) => (
                   <CartItemRow key={item.productId} item={item} />
                 ))}
               </div>
             </div>
-            <div className="mt-auto pt-4" onClick={() => setOpen(false)}>
+            <div className="mt-auto shrink-0 pt-4" onClick={() => setOpen(false)}>
               <CartSummary />
             </div>
           </>

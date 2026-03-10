@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -33,11 +33,24 @@ function FilterPanel({ filters, onFilterChange }: ProductFiltersProps) {
   const [searchInput, setSearchInput] = useState(filters.search);
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
+  // Track whether we are the source of the change to avoid echo loops
+  const isLocalChange = useRef(false);
+
   // Sync debounced search value to parent when it changes
-  const prevDebouncedRef = { current: filters.search };
-  if (debouncedSearch !== prevDebouncedRef.current && debouncedSearch !== filters.search) {
-    onFilterChange({ ...filters, search: debouncedSearch });
-  }
+  useEffect(() => {
+    if (debouncedSearch !== filters.search) {
+      isLocalChange.current = true;
+      onFilterChange({ ...filters, search: debouncedSearch });
+    }
+  }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync parent search value back to local input (e.g. when filters are cleared externally)
+  useEffect(() => {
+    if (!isLocalChange.current && filters.search !== searchInput) {
+      setSearchInput(filters.search);
+    }
+    isLocalChange.current = false;
+  }, [filters.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCategoryToggle = useCallback(
     (category: string) => {

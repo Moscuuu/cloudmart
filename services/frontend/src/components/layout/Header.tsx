@@ -7,7 +7,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useState } from 'react';
 
 const NAV_LINKS = [
-  { to: '/', label: 'Products' },
+  { to: '/products', label: 'Products' },
   { to: '/orders', label: 'Order History' },
 ] as const;
 
