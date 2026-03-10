@@ -1,9 +1,78 @@
-function App() {
+import { createBrowserRouter, RouterProvider, Link, useRouteError, isRouteErrorResponse } from 'react-router';
+import { RootLayout } from '@/components/layout/RootLayout';
+import { NotFoundPage } from '@/pages/NotFoundPage';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
+
+/* -- Placeholder pages (replaced in later plans) -- */
+
+function HomePage() {
+  return <h1 className="text-2xl font-semibold">Products</h1>;
+}
+
+function ProductPage() {
+  return <h1 className="text-2xl font-semibold">Product Detail</h1>;
+}
+
+function CartPage() {
+  return <h1 className="text-2xl font-semibold">Cart</h1>;
+}
+
+function CheckoutPage() {
+  return <h1 className="text-2xl font-semibold">Checkout</h1>;
+}
+
+function OrderConfirmationPage() {
+  return <h1 className="text-2xl font-semibold">Order Confirmation</h1>;
+}
+
+function OrderHistoryPage() {
+  return <h1 className="text-2xl font-semibold">Order History</h1>;
+}
+
+/* -- Error boundary -- */
+
+function ErrorBoundary() {
+  const error = useRouteError();
+  let message = 'An unexpected error occurred.';
+
+  if (isRouteErrorResponse(error)) {
+    message = error.statusText || `Error ${error.status}`;
+  } else if (error instanceof Error) {
+    message = error.message;
+  }
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <h1 className="text-2xl font-bold p-4">CloudMart</h1>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
+      <AlertTriangle className="h-16 w-16 text-destructive" aria-hidden="true" />
+      <h1 className="text-2xl font-semibold">Something went wrong</h1>
+      <p className="text-muted-foreground">{message}</p>
+      <Button render={<Link to="/" />} className="cursor-pointer">
+        Back to home
+      </Button>
     </div>
   );
 }
 
-export default App;
+/* -- Router -- */
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <ErrorBoundary />,
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: 'products/:id', element: <ProductPage /> },
+      { path: 'cart', element: <CartPage /> },
+      { path: 'checkout', element: <CheckoutPage /> },
+      { path: 'orders/:id/confirmation', element: <OrderConfirmationPage /> },
+      { path: 'orders', element: <OrderHistoryPage /> },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+]);
+
+export default function App() {
+  return <RouterProvider router={router} />;
+}
