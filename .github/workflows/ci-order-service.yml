@@ -1,0 +1,30 @@
+name: CI - Order Service
+
+on:
+  push:
+    branches: [main]
+    paths: ["services/order-service/**"]
+  pull_request:
+    branches: [main]
+    paths: ["services/order-service/**"]
+
+concurrency:
+  group: ci-order-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build-and-deploy.yml
+    with:
+      service_name: order-service
+      service_path: services/order-service
+      dockerfile_path: services/order-service/Dockerfile
+      lint_command: "ruff check ."
+      test_command: "uv run pytest"
+      setup_python: true
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+      security-events: write
+    secrets: inherit

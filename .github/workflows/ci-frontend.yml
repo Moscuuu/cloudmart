@@ -1,0 +1,30 @@
+name: CI - Frontend
+
+on:
+  push:
+    branches: [main]
+    paths: ["services/frontend/**"]
+  pull_request:
+    branches: [main]
+    paths: ["services/frontend/**"]
+
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build-and-deploy.yml
+    with:
+      service_name: frontend
+      service_path: services/frontend
+      dockerfile_path: services/frontend/Dockerfile
+      lint_command: "pnpm exec eslint . && pnpm exec tsc -b --noEmit"
+      test_command: "pnpm exec vitest run"
+      setup_node: true
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+      security-events: write
+    secrets: inherit
