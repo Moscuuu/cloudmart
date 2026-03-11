@@ -8,6 +8,9 @@ resources:
   - ../../base/order-service
   - ../../base/frontend
   - ../../base/redis
+  - ../../base/network-policies
+  - ../../base/rbac
+  - ../../base/secrets
 
 images:
   - name: product-service
