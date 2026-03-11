@@ -3,6 +3,7 @@ import { RootLayout } from '@/components/layout/RootLayout';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
+import { ProtectedRoute } from '@/auth/ProtectedRoute';
 
 import { HomePage } from '@/pages/HomePage';
 import { ProductPage } from '@/pages/ProductPage';
@@ -47,9 +48,30 @@ const router = createBrowserRouter([
       { path: 'products', element: <HomePage /> },
       { path: 'products/:id', element: <ProductPage /> },
       { path: 'cart', element: <CartPage /> },
-      { path: 'checkout', element: <CheckoutPage /> },
-      { path: 'orders/:id/confirmation', element: <OrderConfirmationPage /> },
-      { path: 'orders', element: <OrderHistoryPage /> },
+      {
+        path: 'checkout',
+        element: (
+          <ProtectedRoute>
+            <CheckoutPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'orders/:id/confirmation',
+        element: (
+          <ProtectedRoute>
+            <OrderConfirmationPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'orders',
+        element: (
+          <ProtectedRoute>
+            <OrderHistoryPage />
+          </ProtectedRoute>
+        ),
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

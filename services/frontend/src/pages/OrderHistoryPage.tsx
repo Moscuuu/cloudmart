@@ -1,14 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router';
+import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Package, Search } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchOrdersByEmail } from '@/api/orders';
+import { useAuth } from '@/auth/useAuth';
 
 const priceFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -29,80 +27,31 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = 
   CANCELLED: 'destructive',
 };
 
-const EMAIL_STORAGE_KEY = 'cloudmart-email';
-
 export function OrderHistoryPage() {
-  const [searchParams] = useSearchParams();
-  const emailFromUrl = searchParams.get('email') ?? '';
+  const { user } = useAuth();
+  const email = user?.email ?? '';
 
-  const [email, setEmail] = useState(() => {
-    if (emailFromUrl) return emailFromUrl;
-    try {
-      return localStorage.getItem(EMAIL_STORAGE_KEY) ?? '';
-    } catch {
-      return '';
-    }
+  const { data, isLoading } = useQuery({
+    queryKey: ['orders', 'list', email],
+    queryFn: () => fetchOrdersByEmail(email),
+    enabled: !!email,
   });
-
-  const [searchEmail, setSearchEmail] = useState(emailFromUrl);
-
-  // Auto-search if email came from URL
-  useEffect(() => {
-    if (emailFromUrl) {
-      setSearchEmail(emailFromUrl);
-    }
-  }, [emailFromUrl]);
-
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['orders', 'list', searchEmail],
-    queryFn: () => fetchOrdersByEmail(searchEmail),
-    enabled: !!searchEmail,
-  });
-
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (email.trim()) {
-      setSearchEmail(email.trim());
-      try {
-        localStorage.setItem(EMAIL_STORAGE_KEY, email.trim());
-      } catch {
-        // ignore
-      }
-    }
-  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Order History</h1>
-
-      {/* Email search */}
-      <form onSubmit={handleSearch} className="flex items-end gap-3">
-        <div className="flex flex-1 flex-col gap-2">
-          <Label htmlFor="order-email">Email Address</Label>
-          <Input
-            id="order-email"
-            type="email"
-            required
-            placeholder="john@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="min-h-[44px]"
-          />
-        </div>
-        <Button
-          type="submit"
-          disabled={isFetching}
-          className="min-h-[44px] cursor-pointer"
-        >
-          <Search className="h-4 w-4" aria-hidden="true" />
-          Look Up Orders
-        </Button>
-      </form>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Order History</h1>
+        {email && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Showing orders for {email}
+          </p>
+        )}
+      </div>
 
       <Separator />
 
       {/* Loading state */}
-      {isLoading && searchEmail && (
+      {isLoading && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-32 w-full" />
@@ -117,9 +66,9 @@ export function OrderHistoryPage() {
             className="h-16 w-16 text-muted-foreground/50"
             aria-hidden="true"
           />
-          <h2 className="text-xl font-semibold">No orders found</h2>
+          <h2 className="text-xl font-semibold">No orders yet</h2>
           <p className="text-muted-foreground">
-            No orders found for this email address.
+            You haven't placed any orders yet. Start browsing our products!
           </p>
           <Button
             render={<Link to="/" />}
@@ -179,20 +128,6 @@ export function OrderHistoryPage() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* No search yet */}
-      {!searchEmail && !isLoading && (
-        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-          <Search
-            className="h-16 w-16 text-muted-foreground/50"
-            aria-hidden="true"
-          />
-          <h2 className="text-xl font-semibold">Look up your orders</h2>
-          <p className="text-muted-foreground">
-            Enter your email address to find your past orders.
-          </p>
         </div>
       )}
     </div>

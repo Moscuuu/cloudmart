@@ -1,12 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import type { ReactNode } from 'react';
 import { CartContext } from '@/providers/CartProvider';
 import { CheckoutPage } from '@/pages/CheckoutPage';
+import { AuthProvider } from '@/auth/AuthProvider';
 import type { CartStore } from '@/lib/cart-store';
+
+// Mock @react-oauth/google
+vi.mock('@react-oauth/google', () => ({
+  GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useGoogleLogin: () => vi.fn(),
+}));
 
 // Mock the orders API
 vi.mock('@/api/orders', () => ({
@@ -50,6 +57,8 @@ function createMockCartStore(items = sampleCartItems): CartStore {
   };
 }
 
+let fetchSpy: ReturnType<typeof vi.spyOn>;
+
 function renderCheckout(cartStore?: CartStore) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -74,7 +83,9 @@ function renderCheckout(cartStore?: CartStore) {
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <CartContext value={store}>{children}</CartContext>
+        <AuthProvider>
+          <CartContext value={store}>{children}</CartContext>
+        </AuthProvider>
       </QueryClientProvider>
     );
   }
@@ -88,6 +99,18 @@ function renderCheckout(cartStore?: CartStore) {
 
 beforeEach(() => {
   localStorage.clear();
+  fetchSpy = vi.spyOn(globalThis, 'fetch');
+  // Silent refresh fails (not logged in)
+  fetchSpy.mockResolvedValue(
+    new Response(JSON.stringify({ detail: 'No refresh token' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  );
+});
+
+afterEach(() => {
+  fetchSpy.mockRestore();
 });
 
 describe('CheckoutPage', () => {

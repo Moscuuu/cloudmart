@@ -8,13 +8,15 @@ import {
 } from '@/components/checkout/CustomerDetailsStep';
 import { OrderReviewStep } from '@/components/checkout/OrderReviewStep';
 import { useCart } from '@/hooks/use-cart';
+import { useAuth } from '@/auth/useAuth';
 
 export function CheckoutPage() {
   const { items } = useCart();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [customer, setCustomer] = useState<CustomerData>({
-    name: '',
-    email: '',
+    name: user?.name ?? '',
+    email: user?.email ?? '',
     address: '',
   });
 
