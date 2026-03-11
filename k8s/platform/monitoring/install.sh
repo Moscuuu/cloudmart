@@ -16,9 +16,12 @@
 # Prerequisites:
 #   - kubectl configured with cluster access
 #   - helm v3 installed
-#   - (Optional) Create Slack webhook secret before install:
-#     kubectl create secret generic slack-webhook -n monitoring \
-#       --from-literal=url=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+#
+# Slack Alerting (optional):
+#   Before running this script, apply the Slack webhook secret so Alertmanager
+#   can route notifications to your channel:
+#     1. Edit alerts/slack-webhook-secret.yaml with your webhook URL
+#     2. kubectl apply -f alerts/slack-webhook-secret.yaml
 #
 # =============================================================================
 
@@ -83,6 +86,20 @@ helm upgrade --install alloy-traces grafana/alloy \
   --wait \
   --timeout 5m
 
+# 8. Apply PrometheusRule alert definitions
+echo "[8/9] Applying PrometheusRule alert definitions..."
+kubectl apply -f alerts/prometheus-rules.yaml
+
+# 9. Apply dashboard ConfigMaps and ServiceMonitors
+echo "[9/9] Applying dashboards and ServiceMonitors..."
+kubectl apply -f dashboards/dashboards-configmap.yaml 2>/dev/null || echo "  (dashboards-configmap.yaml not found -- skipping)"
+kubectl apply -f servicemonitors.yaml 2>/dev/null || echo "  (servicemonitors.yaml not found -- skipping)"
+
+# Check for Slack webhook secret
+echo ""
+kubectl get secret slack-webhook -n monitoring >/dev/null 2>&1 \
+  || echo "WARNING: slack-webhook secret not found. Apply alerts/slack-webhook-secret.yaml with your webhook URL."
+
 echo ""
 echo "=== Installation Complete ==="
 echo ""
@@ -92,7 +109,3 @@ echo ""
 echo "Access Grafana:"
 echo "  kubectl get svc -n monitoring kube-prometheus-stack-grafana"
 echo "  Default credentials: admin / prom-operator"
-echo ""
-echo "Note: If Alertmanager Slack notifications are needed, create the webhook secret:"
-echo "  kubectl create secret generic slack-webhook -n monitoring \\"
-echo "    --from-literal=url=https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
