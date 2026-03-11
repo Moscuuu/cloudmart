@@ -1,3 +1,6 @@
+jwt:
+  secret: "test-secret-key-for-unit-tests-min-32-bytes!!"
+
 spring:
   jpa:
     hibernate:
