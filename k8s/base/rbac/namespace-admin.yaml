@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: namespace-admin
+  labels:
+    app.kubernetes.io/part-of: cloudmart
+rules:
+  - apiGroups: ["", "apps", "batch"]
+    resources:
+      - pods
+      - deployments
+      - services
+      - configmaps
+      - secrets
+      - jobs
+      - statefulsets
+      - replicasets
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources:
+      - pods/log
+      - pods/exec
+    verbs: ["get", "list", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: namespace-admin-binding
+  labels:
+    app.kubernetes.io/part-of: cloudmart
+subjects:
+  - kind: Group
+    name: namespace-admins
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: namespace-admin
+  apiGroup: rbac.authorization.k8s.io

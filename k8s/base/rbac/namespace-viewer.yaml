@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: namespace-viewer
+  labels:
+    app.kubernetes.io/part-of: cloudmart
+rules:
+  - apiGroups: ["", "apps"]
+    resources:
+      - pods
+      - pods/log
+      - deployments
+      - services
+      - configmaps
+      - events
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: namespace-viewer-binding
+  labels:
+    app.kubernetes.io/part-of: cloudmart
+subjects:
+  - kind: Group
+    name: namespace-viewers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: namespace-viewer
+  apiGroup: rbac.authorization.k8s.io
