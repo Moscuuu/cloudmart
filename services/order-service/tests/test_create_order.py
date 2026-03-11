@@ -10,8 +10,20 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from order_service.auth.jwt_service import JwtService
 from order_service.models.order import Order, OrderStatus
 from order_service.models.order_item import OrderItem
+
+
+def _auth_header(
+    user_id: str = "google-oauth2|testuser",
+    email: str = "john@example.com",
+    name: str = "John Doe",
+    role: str = "user",
+) -> dict:
+    """Create Authorization header with a valid test JWT."""
+    token = JwtService.create_access_token(user_id, email, name, role)
+    return {"Authorization": f"Bearer {token}"}
 
 
 def _make_order_payload(
@@ -107,7 +119,9 @@ async def test_create_order_success(client_with_mock_product, mock_http_client, 
 
     mock_http_client.get = AsyncMock(side_effect=mock_get)
 
-    response = await client_with_mock_product.post("/api/v1/orders", json=payload)
+    response = await client_with_mock_product.post(
+        "/api/v1/orders", json=payload, headers=_auth_header()
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -150,7 +164,9 @@ async def test_create_order_insufficient_stock(
 
     mock_http_client.get = AsyncMock(side_effect=mock_get)
 
-    response = await client_with_mock_product.post("/api/v1/orders", json=payload)
+    response = await client_with_mock_product.post(
+        "/api/v1/orders", json=payload, headers=_auth_header()
+    )
 
     assert response.status_code == 400
 
@@ -175,7 +191,9 @@ async def test_create_order_product_service_unavailable(
         side_effect=httpx.ConnectError("Connection refused")
     )
 
-    response = await client_with_mock_product.post("/api/v1/orders", json=payload)
+    response = await client_with_mock_product.post(
+        "/api/v1/orders", json=payload, headers=_auth_header()
+    )
 
     assert response.status_code == 503
     assert "unavailable" in response.json()["detail"].lower()
@@ -217,7 +235,9 @@ async def test_create_order_calculates_total(
 
     mock_http_client.get = AsyncMock(side_effect=mock_get)
 
-    response = await client_with_mock_product.post("/api/v1/orders", json=payload)
+    response = await client_with_mock_product.post(
+        "/api/v1/orders", json=payload, headers=_auth_header()
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -230,7 +250,9 @@ async def test_create_order_empty_items(client_with_mock_product):
     """POST with empty items list returns 422 (Pydantic validation)."""
     payload = _make_order_payload(items=[])
 
-    response = await client_with_mock_product.post("/api/v1/orders", json=payload)
+    response = await client_with_mock_product.post(
+        "/api/v1/orders", json=payload, headers=_auth_header()
+    )
 
     assert response.status_code == 422
 
@@ -264,7 +286,9 @@ async def test_create_order_stores_product_name(
 
     mock_http_client.get = AsyncMock(side_effect=mock_get)
 
-    response = await client_with_mock_product.post("/api/v1/orders", json=payload)
+    response = await client_with_mock_product.post(
+        "/api/v1/orders", json=payload, headers=_auth_header()
+    )
 
     assert response.status_code == 201
     data = response.json()

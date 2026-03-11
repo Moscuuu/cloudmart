@@ -9,9 +9,18 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from order_service.auth.jwt_service import JwtService
 from order_service.models.order import Order, OrderStatus
 from order_service.models.order_item import OrderItem
 from order_service.services.pubsub_publisher import PubSubPublisher
+
+
+def _auth_header() -> dict:
+    """Create Authorization header with a valid test JWT."""
+    token = JwtService.create_access_token(
+        "google-oauth2|pubsubtest", "api@example.com", "API User"
+    )
+    return {"Authorization": f"Bearer {token}"}
 
 
 # ---------------------------------------------------------------------------
@@ -247,6 +256,7 @@ class TestOrderCreationWithPubSub:
                         for i, pid in enumerate(product_ids)
                     ],
                 },
+                headers=_auth_header(),
             )
 
         assert response.status_code == 201

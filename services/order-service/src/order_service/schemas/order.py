@@ -20,10 +20,14 @@ class OrderItemRequest(BaseModel):
 
 
 class CreateOrderRequest(BaseModel):
-    """Request schema for creating an order."""
+    """Request schema for creating an order.
 
-    customer_name: str = Field(min_length=1, max_length=255)
-    customer_email: str = Field(min_length=1, max_length=255)
+    customer_name and customer_email are optional when the request is
+    authenticated -- the JWT claims provide fallback values.
+    """
+
+    customer_name: str | None = Field(default=None, max_length=255)
+    customer_email: str | None = Field(default=None, max_length=255)
     shipping_address: str = Field(min_length=1, max_length=1000)
     items: list[OrderItemRequest] = Field(min_length=1)
 
@@ -51,6 +55,7 @@ class OrderResponse(BaseModel):
     shipping_address: str
     status: OrderStatus
     total_amount: float
+    user_id: str | None = None
     created_at: datetime
     updated_at: datetime
     items: list[OrderItemResponse] = []

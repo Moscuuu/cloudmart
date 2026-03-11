@@ -38,7 +38,14 @@ class OrderService:
         self.product_client = ProductClient(http_client)
         self._pubsub_publisher = pubsub_publisher
 
-    async def create_order(self, request: CreateOrderRequest) -> Order:
+    async def create_order(
+        self,
+        request: CreateOrderRequest,
+        *,
+        user_id: str | None = None,
+        user_email: str | None = None,
+        user_name: str | None = None,
+    ) -> Order:
         """Create an order after validating stock for all items.
 
         Flow:
@@ -73,13 +80,18 @@ class OrderService:
                 )
 
             # Step 3: Build and persist order
+            # JWT claims provide fallbacks for customer_name/email
+            customer_name = request.customer_name or user_name or "Unknown"
+            customer_email = request.customer_email or user_email or "unknown@example.com"
+
             order = Order(
-                customer_name=request.customer_name,
-                customer_email=request.customer_email,
+                customer_name=customer_name,
+                customer_email=customer_email,
                 shipping_address=request.shipping_address,
                 status=OrderStatus.PENDING,
                 total_amount=float(total_amount),
                 items=order_items,
+                user_id=user_id,
             )
 
             order = await self.repository.create(order)
