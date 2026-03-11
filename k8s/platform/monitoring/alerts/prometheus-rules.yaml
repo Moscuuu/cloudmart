@@ -1,0 +1,67 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloudmart-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    # -------------------------------------------------------------------------
+    # Critical alerts -- fire after 2 minutes
+    # -------------------------------------------------------------------------
+    - name: cloudmart.critical
+      rules:
+        - alert: PodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total{namespace=~"dev|staging|prod"}[10m]) * 60 * 5 > 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} crash looping"
+            dashboard: "/d/cluster-overview"
+
+        - alert: HighErrorRate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) by (job)
+              /
+              sum(rate(http_server_requests_seconds_count[5m])) by (job)
+            ) > 0.05
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Error rate above 5% for {{ $labels.job }}"
+            dashboard: "/d/service-health"
+
+    # -------------------------------------------------------------------------
+    # Warning alerts -- fire after 5 minutes
+    # -------------------------------------------------------------------------
+    - name: cloudmart.warning
+      rules:
+        - alert: HighCPUUsage
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace=~"dev|staging|prod", container!=""}[5m])) by (pod, namespace)
+              /
+              sum(kube_pod_container_resource_limits{resource="cpu", namespace=~"dev|staging|prod"}) by (pod, namespace)
+            ) > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CPU usage above 80% for {{ $labels.namespace }}/{{ $labels.pod }}"
+            dashboard: "/d/cluster-overview"
+
+        - alert: HighOrderLatency
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_server_requests_seconds_bucket{uri=~"/orders.*"}[5m])) by (le, job)
+            ) > 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Order P99 latency above 2s for {{ $labels.job }}"
+            dashboard: "/d/service-health"
