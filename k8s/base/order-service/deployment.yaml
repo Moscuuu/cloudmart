@@ -24,6 +24,11 @@ spec:
             - configMapRef:
                 name: order-service-config
           env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: database-url
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
