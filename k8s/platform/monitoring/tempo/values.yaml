@@ -1,0 +1,40 @@
+# Tempo Helm Values (Single-Binary Mode)
+# =========================================
+#
+# Deploys Tempo for distributed trace storage.
+# Receives traces from Alloy OTLP receiver.
+#
+# Install:
+#   helm repo add grafana https://grafana.github.io/helm-charts
+#   helm upgrade --install tempo grafana/tempo \
+#     -n monitoring -f values.yaml --wait
+#
+
+fullnameOverride: "tempo"  # Predictable service name: tempo.monitoring
+
+tempo:
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+  retention: 72h  # 3 days for dev
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
+
+persistence:
+  enabled: true
+  size: 10Gi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

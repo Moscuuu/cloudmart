@@ -1,0 +1,63 @@
+# Loki Helm Values (Monolithic Mode)
+# ====================================
+#
+# Deploys Loki in SingleBinary mode for log aggregation.
+# Receives logs from Alloy DaemonSet via push API.
+#
+# Install:
+#   helm repo add grafana https://grafana.github.io/helm-charts
+#   helm upgrade --install loki grafana/loki \
+#     -n monitoring -f values.yaml --wait
+#
+
+fullnameOverride: "loki"  # Predictable service name: loki.monitoring
+
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  limits_config:
+    retention_period: 72h  # 3 days for dev
+    max_query_series: 500
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+
+# Disable unused components
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+gateway:
+  enabled: false  # Direct access within cluster
+
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false

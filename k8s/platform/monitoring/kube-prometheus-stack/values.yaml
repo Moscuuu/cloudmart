@@ -1,0 +1,103 @@
+# kube-prometheus-stack Helm Values
+# ==================================
+#
+# Deploys Prometheus, Grafana, Alertmanager, node-exporter, kube-state-metrics.
+#
+# Install:
+#   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#   helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#     -n monitoring -f values.yaml --wait
+#
+# Prerequisites:
+#   kubectl create secret generic slack-webhook -n monitoring \
+#     --from-literal=url=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+#
+
+# -- Grafana
+grafana:
+  enabled: true
+  service:
+    type: LoadBalancer  # Easy access for portfolio demo (same pattern as ArgoCD)
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: monitoring
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki
+      url: http://loki.monitoring:3100
+      access: proxy
+      jsonData:
+        derivedFields:
+          - name: TraceID
+            datasourceUid: tempo
+            matcherRegex: '"trace_id":"([a-f0-9]+)"'
+            url: "$${__value.raw}"
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      url: http://tempo.monitoring:3100
+      access: proxy
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: "-1h"
+          spanEndTimeShift: "1h"
+          filterByTraceID: true
+          filterBySpanID: false
+          customQuery: true
+          query: '{service="${__span.tags["service.name"]}"} | json | trace_id = `${__trace.traceId}`'
+
+# -- Prometheus
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false  # Scrape all ServiceMonitors
+    ruleSelectorNilUsesHelmValues: false             # Evaluate all PrometheusRules
+    serviceMonitorNamespaceSelector: {}              # All namespaces
+    ruleNamespaceSelector: {}                        # All namespaces
+    retention: 7d
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+# -- Alertmanager
+alertmanager:
+  enabled: true
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: slack-notifications
+      group_by: [alertname]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - receiver: slack-notifications
+          matchers:
+            - severity = "critical"
+          group_interval: 2m
+        - receiver: slack-notifications
+          matchers:
+            - severity = "warning"
+          group_interval: 5m
+    receivers:
+      - name: slack-notifications
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/slack-webhook/url
+            channel: "#cloudmart-alerts"
+            send_resolved: true
+            title: '{{ .GroupLabels.alertname }}'
+            text: >-
+              {{ range .Alerts }}
+              *{{ .Labels.severity | toUpper }}*: {{ .Annotations.summary }}
+              Dashboard: {{ .Annotations.dashboard }}
+              {{ end }}
+  alertmanagerSpec:
+    secrets:
+      - slack-webhook  # K8s Secret with key "url" -- create manually before install
