@@ -60,6 +60,14 @@ build-frontend: ## Build Frontend Docker image
 build-all: build-product build-order build-frontend ## Build all Docker images
 
 # ---------------------------------------------------------------------------
+# Deployment
+# ---------------------------------------------------------------------------
+
+.PHONY: deploy-dev
+deploy-dev: ## Deploy to dev environment via Kustomize
+	kubectl apply -k k8s/overlays/dev
+
+# ---------------------------------------------------------------------------
 # Help
 # ---------------------------------------------------------------------------
 
