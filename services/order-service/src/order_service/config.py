@@ -16,6 +16,15 @@ class Settings(BaseSettings):
     pubsub_emulator_host: str | None = None
     environment: str = "local"
 
+    # Auth settings
+    jwt_secret: str = "dev-secret-change-in-production-min-32-bytes"
+    oauth_client_id: str = ""
+    oauth_client_secret: str = ""
+    admin_emails: str = ""
+
+    # CORS settings
+    cors_origins: str = "http://localhost:5173"
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
