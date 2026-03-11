@@ -14,3 +14,11 @@ spring:
   docker:
     compose:
       enabled: false
+
+logging:
+  structured:
+    format:
+      console: logstash
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.cloudmart: ${LOG_LEVEL:INFO}

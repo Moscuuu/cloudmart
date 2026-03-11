@@ -7,6 +7,11 @@ spring:
     problemdetails:
       enabled: true
 
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.cloudmart: ${LOG_LEVEL:INFO}
+
 server:
   port: 8080
 

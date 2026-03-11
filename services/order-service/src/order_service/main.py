@@ -9,6 +9,7 @@ import redis.asyncio as aioredis
 from fastapi import FastAPI, Response
 
 from order_service.config import settings
+from order_service.logging_config import configure_logging
 from order_service.metrics import generate_latest, CONTENT_TYPE_LATEST
 from order_service.routers.availability import router as availability_router
 from order_service.routers.orders import router as orders_router
@@ -19,6 +20,9 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle: startup and shutdown resources."""
+    # Configure logging first (JSON in production, text locally)
+    configure_logging()
+
     # Startup
     app.state.redis = aioredis.from_url(
         settings.redis_url, decode_responses=True
