@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from order_service.auth.dependencies import get_current_user
+from order_service.auth.events import log_auth_event
 from order_service.database import get_db
 from order_service.repositories.order_repository import OrderRepository
 from order_service.schemas.order import (
@@ -60,10 +61,10 @@ async def get_order(
             or order.customer_email == user.get("email")
         )
         if not is_owner:
-            logger.warning(
-                "Permission denied: user %s attempted to access order %s",
-                user["sub"],
-                order_id,
+            log_auth_event(
+                "auth.permission.denied",
+                user_id=user["sub"],
+                result="denied",
             )
             raise HTTPException(
                 status_code=403, detail="Not authorized to view this order"

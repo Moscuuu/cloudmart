@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
 from order_service.auth.dependencies import get_current_user
+from order_service.auth.events import log_auth_event
 from order_service.auth.jwt_service import JwtService, REFRESH_TOKEN_EXPIRE_DAYS
 from order_service.auth.oauth_client import exchange_google_code
 from order_service.auth.rate_limiter import check_login_rate_limit
@@ -51,9 +52,8 @@ async def google_login(body: GoogleLoginRequest, request: Request, response: Res
         # Exchange code for Google user info
         google_user = await exchange_google_code(body.code)
     except Exception:
-        logger.warning(
-            "Google OAuth login failed",
-            extra={"event_type": "auth.login.failure", "client_ip": client_ip},
+        log_auth_event(
+            "auth.login.failure", client_ip=client_ip, result="failure"
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -86,9 +86,8 @@ async def google_login(body: GoogleLoginRequest, request: Request, response: Res
     except Exception:
         logger.warning("Failed to store refresh token in Redis", exc_info=True)
 
-    logger.info(
-        "User logged in via Google OAuth",
-        extra={"event_type": "auth.login.success", "user_id": user_id, "client_ip": client_ip},
+    log_auth_event(
+        "auth.login.success", user_id=user_id, client_ip=client_ip
     )
 
     _set_refresh_cookie(response, refresh_token)
@@ -167,10 +166,7 @@ async def refresh_token(request: Request, response: Response):
             detail="Token refresh failed",
         )
 
-    logger.info(
-        "Token refreshed",
-        extra={"event_type": "auth.token.refresh", "user_id": user_id},
-    )
+    log_auth_event("auth.token.refresh", user_id=user_id)
 
     _set_refresh_cookie(response, new_refresh)
 
@@ -200,10 +196,7 @@ async def logout(request: Request, response: Response):
             except Exception:
                 logger.warning("Failed to delete refresh token from Redis", exc_info=True)
 
-            logger.info(
-                "User logged out",
-                extra={"event_type": "auth.logout", "user_id": claims["sub"]},
-            )
+            log_auth_event("auth.logout", user_id=claims["sub"])
 
     response.delete_cookie(key="refresh_token", path="/api/v1/auth")
     return {"message": "Logged out"}

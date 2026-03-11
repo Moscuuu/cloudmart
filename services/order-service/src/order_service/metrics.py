@@ -18,10 +18,17 @@ REVENUE_GAUGE = Gauge(
     "Simulated total revenue in dollars",
 )
 
+auth_events_total = Counter(
+    "auth_events_total",
+    "Total authentication events",
+    ["event_type", "result"],
+)
+
 __all__ = [
     "ORDERS_CREATED",
     "PRODUCTS_VIEWED",
     "REVENUE_GAUGE",
+    "auth_events_total",
     "generate_latest",
     "CONTENT_TYPE_LATEST",
 ]
