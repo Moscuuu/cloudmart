@@ -6,9 +6,10 @@ from contextlib import asynccontextmanager
 
 import httpx
 import redis.asyncio as aioredis
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 
 from order_service.config import settings
+from order_service.metrics import generate_latest, CONTENT_TYPE_LATEST
 from order_service.routers.availability import router as availability_router
 from order_service.routers.orders import router as orders_router
 
@@ -58,6 +59,12 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+@app.get("/metrics")
+async def metrics():
+    """Expose Prometheus metrics."""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 app.include_router(orders_router)

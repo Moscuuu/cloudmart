@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Request
 from httpx import HTTPError
 
+from order_service.metrics import PRODUCTS_VIEWED
 from order_service.schemas.inventory import InventoryResponse
 from order_service.services.cache_service import CacheService
 from order_service.services.product_client import ProductClient
@@ -25,6 +26,8 @@ async def get_product_availability(product_id: str, request: Request):
     http_client = request.app.state.http_client
     product_client = ProductClient(http_client)
     cache_service = CacheService(redis_client, product_client)
+
+    PRODUCTS_VIEWED.inc()
 
     try:
         data = await cache_service.get_availability(product_id)

@@ -20,6 +20,8 @@ dependencies = [
     "opentelemetry-instrumentation-sqlalchemy>=0.50b0",
     "opentelemetry-instrumentation-httpx>=0.50b0",
     "opentelemetry-instrumentation-redis>=0.50b0",
+    "prometheus-client>=0.21.0",
+    "python-json-logger>=2.0.0",
 ]
 
 [dependency-groups]

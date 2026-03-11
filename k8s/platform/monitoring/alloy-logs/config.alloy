@@ -1,0 +1,73 @@
+// Alloy Log Collection Pipeline
+// ===============================
+//
+// DaemonSet pipeline: discovers pods, tails container logs,
+// extracts structured fields, forwards to Loki.
+// Also collects Kubernetes events.
+
+// --- Pod Log Collection ---
+
+discovery.kubernetes "pods" {
+  role = "pod"
+}
+
+discovery.relabel "pods" {
+  targets = discovery.kubernetes.pods.targets
+
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label  = "namespace"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label  = "pod"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_app"]
+    target_label  = "app"
+  }
+}
+
+loki.source.kubernetes "pods" {
+  targets    = discovery.relabel.pods.output
+  forward_to = [loki.process.pipeline.receiver]
+}
+
+loki.process "pipeline" {
+  // Parse JSON logs and extract fields
+  stage.json {
+    expressions = {
+      level   = "level",
+      service = "service",
+    }
+  }
+
+  // Only promote low-cardinality fields as labels (per pitfall #4)
+  stage.labels {
+    values = {
+      level   = "",
+      service = "",
+    }
+  }
+
+  forward_to = [loki.write.default.receiver]
+}
+
+// --- Kubernetes Events ---
+
+loki.source.kubernetes_events "events" {
+  log_format = "json"
+  forward_to = [loki.write.default.receiver]
+}
+
+// --- Loki Output ---
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki.monitoring:3100/loki/api/v1/push"
+  }
+}

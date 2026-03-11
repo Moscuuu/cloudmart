@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from order_service.models.order import Order, OrderStatus
 from order_service.models.order_item import OrderItem
 from order_service.repositories.order_repository import OrderRepository
+from order_service.metrics import ORDERS_CREATED, REVENUE_GAUGE
 from order_service.schemas.order import CreateOrderRequest
 from order_service.services.product_client import ProductClient
 
@@ -49,38 +50,46 @@ class OrderService:
         Raises HTTPException 400 if any item has insufficient stock.
         Raises HTTPException 503 if Product Service is unreachable.
         """
-        # Step 1: Validate stock (raises on failure)
-        await self.product_client.validate_all_stock(request.items)
+        try:
+            # Step 1: Validate stock (raises on failure)
+            await self.product_client.validate_all_stock(request.items)
 
-        # Step 2: Calculate totals and build order items
-        order_items = []
-        total_amount = Decimal("0")
+            # Step 2: Calculate totals and build order items
+            order_items = []
+            total_amount = Decimal("0")
 
-        for item in request.items:
-            line_total = item.unit_price * item.quantity
-            total_amount += line_total
+            for item in request.items:
+                line_total = item.unit_price * item.quantity
+                total_amount += line_total
 
-            order_items.append(
-                OrderItem(
-                    product_id=item.product_id,
-                    product_name=item.product_name,
-                    quantity=item.quantity,
-                    unit_price=float(item.unit_price),
-                    line_total=float(line_total),
+                order_items.append(
+                    OrderItem(
+                        product_id=item.product_id,
+                        product_name=item.product_name,
+                        quantity=item.quantity,
+                        unit_price=float(item.unit_price),
+                        line_total=float(line_total),
+                    )
                 )
+
+            # Step 3: Build and persist order
+            order = Order(
+                customer_name=request.customer_name,
+                customer_email=request.customer_email,
+                shipping_address=request.shipping_address,
+                status=OrderStatus.PENDING,
+                total_amount=float(total_amount),
+                items=order_items,
             )
 
-        # Step 3: Build and persist order
-        order = Order(
-            customer_name=request.customer_name,
-            customer_email=request.customer_email,
-            shipping_address=request.shipping_address,
-            status=OrderStatus.PENDING,
-            total_amount=float(total_amount),
-            items=order_items,
-        )
+            order = await self.repository.create(order)
 
-        order = await self.repository.create(order)
+            # Track business metrics
+            ORDERS_CREATED.labels(status="completed").inc()
+            REVENUE_GAUGE.inc(float(total_amount))
+        except Exception:
+            ORDERS_CREATED.labels(status="failed").inc()
+            raise
 
         # Step 4: Publish order-placed events and confirm
         if self._pubsub_publisher is not None:

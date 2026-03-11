@@ -1,0 +1,93 @@
+# Alloy Logs Helm Values (DaemonSet Mode)
+# ==========================================
+#
+# Deploys Alloy as DaemonSet for node-level log collection.
+# Tails /var/log/pods and collects Kubernetes events.
+#
+# Install:
+#   helm repo add grafana https://grafana.github.io/helm-charts
+#   helm upgrade --install alloy-logs grafana/alloy \
+#     -n monitoring -f values.yaml -f config.alloy --wait
+#
+
+fullnameOverride: "alloy-logs"
+
+alloy:
+  configMap:
+    create: true
+    content: |
+      // Alloy Log Collection Pipeline
+      // ===============================
+
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "pods" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app"]
+          target_label  = "app"
+        }
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pods.output
+        forward_to = [loki.process.pipeline.receiver]
+      }
+
+      loki.process "pipeline" {
+        stage.json {
+          expressions = {
+            level   = "level",
+            service = "service",
+          }
+        }
+
+        stage.labels {
+          values = {
+            level   = "",
+            service = "",
+          }
+        }
+
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.source.kubernetes_events "events" {
+        log_format = "json"
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki.monitoring:3100/loki/api/v1/push"
+        }
+      }
+
+controller:
+  type: daemonset
+
+resources:
+  requests:
+    cpu: 64m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+serviceAccount:
+  create: true
