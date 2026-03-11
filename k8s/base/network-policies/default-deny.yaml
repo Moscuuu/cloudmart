@@ -1,0 +1,14 @@
+# -----------------------------------------------------------------------------
+# Default Deny-All NetworkPolicy
+# Blocks all ingress and egress for every pod in the namespace.
+# Individual allow policies punch holes for permitted traffic.
+# -----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

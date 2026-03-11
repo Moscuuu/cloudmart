@@ -1,0 +1,23 @@
+# -----------------------------------------------------------------------------
+# Redis NetworkPolicy
+# Ingress: only order-service on port 6379
+# Egress: none beyond DNS (passive data store)
+# -----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: order-service
+      ports:
+        - protocol: TCP
+          port: 6379

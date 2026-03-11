@@ -1,0 +1,57 @@
+# -----------------------------------------------------------------------------
+# Product Service NetworkPolicy
+# Ingress: Gateway (any) + Prometheus (monitoring ns) on port 8080
+# Egress: Cloud SQL (10.0.0.0/8:5432), Google APIs (0.0.0.0/0:443),
+#         Alloy OTLP (monitoring ns:4317)
+# -----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-product-service
+spec:
+  podSelector:
+    matchLabels:
+      app: product-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - {}
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Cloud SQL private IP
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Google APIs (Pub/Sub) -- public IPs only
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+    # Alloy OTLP collector
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4317

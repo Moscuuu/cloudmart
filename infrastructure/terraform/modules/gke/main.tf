@@ -38,6 +38,10 @@ resource "google_container_cluster" "primary" {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
 
+  # Dataplane V2 (Cilium) -- required for NetworkPolicy enforcement.
+  # Do NOT set enable_network_policy -- Dataplane V2 makes it redundant and they conflict.
+  datapath_provider = "ADVANCED_DATAPATH"
+
   gateway_api_config {
     channel = "CHANNEL_STANDARD"
   }
