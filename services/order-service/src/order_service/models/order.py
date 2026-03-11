@@ -31,6 +31,9 @@ class Order(Base):
     customer_email: Mapped[str] = mapped_column(
         String(255), nullable=False, index=True
     )
+    user_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )
     shipping_address: Mapped[str] = mapped_column(String(1000), nullable=False)
     status: Mapped[OrderStatus] = mapped_column(
         Enum(OrderStatus, name="orderstatus"),

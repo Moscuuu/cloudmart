@@ -97,6 +97,12 @@ async def async_client(engine) -> AsyncGenerator[AsyncClient, None]:
     if not hasattr(app.state, "http_client") or app.state.http_client is None:
         app.state.http_client = AsyncMock(spec=httpx.AsyncClient)
 
+    # Provide a default mock redis so auth routes don't fail
+    if not hasattr(app.state, "redis") or app.state.redis is None:
+        import redis.asyncio as aioredis
+
+        app.state.redis = AsyncMock(spec=aioredis.Redis)
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
