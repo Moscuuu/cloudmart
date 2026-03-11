@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - gateway.yaml
+  - self-signed-issuer.yaml
   - httproute-dev.yaml
   - httproute-staging.yaml
   - httproute-prod.yaml

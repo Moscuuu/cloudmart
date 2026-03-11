@@ -1,0 +1,24 @@
+# Self-signed certificate for dev/staging environments.
+# For production, replace with a Let's Encrypt ClusterIssuer.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cloudmart-tls
+  namespace: gateway
+spec:
+  secretName: cloudmart-tls
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - "cloudmart.example.com"
+    - "*.cloudmart.example.com"
+  duration: 8760h  # 1 year
+  renewBefore: 720h  # 30 days

@@ -6,8 +6,8 @@
 # External IP is assigned by GCP and can be retrieved via:
 #   kubectl get gateway cloudmart-gateway -n gateway
 #
-# To add TLS later: add a second listener with protocol HTTPS, port 443,
-# and a certificateRef pointing to a Google-managed certificate.
+# TLS is terminated at the Gateway using a cert-manager issued certificate.
+# For production, replace the self-signed issuer with a Let's Encrypt ClusterIssuer.
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -21,6 +21,18 @@ spec:
     - name: http
       protocol: HTTP
       port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cloudmart-tls
+            namespace: gateway
       allowedRoutes:
         namespaces:
           from: All

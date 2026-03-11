@@ -14,3 +14,5 @@ data:
   OTEL_TRACES_EXPORTER: "otlp"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://alloy-traces.monitoring:4317"
   LOG_FORMAT: "json"
+  CORS_ORIGINS: "https://cloudmart.example.com"
+  ADMIN_EMAILS: "admin@example.com"
