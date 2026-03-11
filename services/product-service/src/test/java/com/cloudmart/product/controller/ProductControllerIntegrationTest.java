@@ -1,6 +1,7 @@
 package com.cloudmart.product.controller;
 
 import com.cloudmart.product.TestcontainersConfiguration;
+import com.cloudmart.product.TestJwtHelper;
 import com.cloudmart.product.dto.ProductRequest;
 import com.cloudmart.product.dto.ProductResponse;
 import com.cloudmart.product.model.Category;
@@ -14,6 +15,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -53,12 +55,24 @@ class ProductControllerIntegrationTest {
                 "http://img.example.com/img.jpg", sku, testCategory.getId());
     }
 
+    private HttpHeaders adminHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(TestJwtHelper.adminJwt());
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+        return headers;
+    }
+
+    private ResponseEntity<ProductResponse> createProductAsAdmin(ProductRequest request) {
+        return restTemplate.exchange("/api/v1/products", HttpMethod.POST,
+                new HttpEntity<>(request, adminHeaders()), ProductResponse.class);
+    }
+
     @Test
     void shouldListProductsWithPagination() {
-        // Create some products
-        restTemplate.postForEntity("/api/v1/products", createRequest("Product A", "SKU-A"), ProductResponse.class);
-        restTemplate.postForEntity("/api/v1/products", createRequest("Product B", "SKU-B"), ProductResponse.class);
-        restTemplate.postForEntity("/api/v1/products", createRequest("Product C", "SKU-C"), ProductResponse.class);
+        // Create some products (as admin)
+        createProductAsAdmin(createRequest("Product A", "SKU-A"));
+        createProductAsAdmin(createRequest("Product B", "SKU-B"));
+        createProductAsAdmin(createRequest("Product C", "SKU-C"));
 
         ResponseEntity<RestPageResponse> response = restTemplate.getForEntity(
                 "/api/v1/products?size=2&sort=name,asc", RestPageResponse.class);
@@ -72,8 +86,7 @@ class ProductControllerIntegrationTest {
 
     @Test
     void shouldGetProductById() {
-        ResponseEntity<ProductResponse> createResponse = restTemplate.postForEntity(
-                "/api/v1/products", createRequest("Widget", "WID-001"), ProductResponse.class);
+        ResponseEntity<ProductResponse> createResponse = createProductAsAdmin(createRequest("Widget", "WID-001"));
         UUID productId = createResponse.getBody().id();
 
         ResponseEntity<ProductResponse> response = restTemplate.getForEntity(
@@ -101,8 +114,7 @@ class ProductControllerIntegrationTest {
     void shouldCreateProduct() {
         ProductRequest request = createRequest("Gaming Laptop", "LAP-001");
 
-        ResponseEntity<ProductResponse> response = restTemplate.postForEntity(
-                "/api/v1/products", request, ProductResponse.class);
+        ResponseEntity<ProductResponse> response = createProductAsAdmin(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
@@ -116,8 +128,9 @@ class ProductControllerIntegrationTest {
     void shouldReturn400ForInvalidProduct() {
         ProductRequest invalid = new ProductRequest("", null, null, null, "", null);
 
-        ResponseEntity<ProblemDetail> response = restTemplate.postForEntity(
-                "/api/v1/products", invalid, ProblemDetail.class);
+        ResponseEntity<ProblemDetail> response = restTemplate.exchange(
+                "/api/v1/products", HttpMethod.POST,
+                new HttpEntity<>(invalid, adminHeaders()), ProblemDetail.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
@@ -126,10 +139,11 @@ class ProductControllerIntegrationTest {
 
     @Test
     void shouldReturn409ForDuplicateSku() {
-        restTemplate.postForEntity("/api/v1/products", createRequest("First", "DUP-001"), ProductResponse.class);
+        createProductAsAdmin(createRequest("First", "DUP-001"));
 
-        ResponseEntity<ProblemDetail> response = restTemplate.postForEntity(
-                "/api/v1/products", createRequest("Second", "DUP-001"), ProblemDetail.class);
+        ResponseEntity<ProblemDetail> response = restTemplate.exchange(
+                "/api/v1/products", HttpMethod.POST,
+                new HttpEntity<>(createRequest("Second", "DUP-001"), adminHeaders()), ProblemDetail.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isNotNull();
@@ -138,15 +152,14 @@ class ProductControllerIntegrationTest {
 
     @Test
     void shouldUpdateProduct() {
-        ResponseEntity<ProductResponse> createResponse = restTemplate.postForEntity(
-                "/api/v1/products", createRequest("Old Name", "UPD-001"), ProductResponse.class);
+        ResponseEntity<ProductResponse> createResponse = createProductAsAdmin(createRequest("Old Name", "UPD-001"));
         UUID productId = createResponse.getBody().id();
 
         ProductRequest updateRequest = new ProductRequest("New Name", "Updated description",
                 new BigDecimal("149.99"), null, "UPD-001", testCategory.getId());
         ResponseEntity<ProductResponse> response = restTemplate.exchange(
                 "/api/v1/products/" + productId, HttpMethod.PUT,
-                new HttpEntity<>(updateRequest), ProductResponse.class);
+                new HttpEntity<>(updateRequest, adminHeaders()), ProductResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().name()).isEqualTo("New Name");
@@ -155,13 +168,12 @@ class ProductControllerIntegrationTest {
 
     @Test
     void shouldDeleteProduct() {
-        ResponseEntity<ProductResponse> createResponse = restTemplate.postForEntity(
-                "/api/v1/products", createRequest("To Delete", "DEL-001"), ProductResponse.class);
+        ResponseEntity<ProductResponse> createResponse = createProductAsAdmin(createRequest("To Delete", "DEL-001"));
         UUID productId = createResponse.getBody().id();
 
         ResponseEntity<Void> deleteResponse = restTemplate.exchange(
                 "/api/v1/products/" + productId, HttpMethod.DELETE,
-                null, Void.class);
+                new HttpEntity<>(adminHeaders()), Void.class);
 
         assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
