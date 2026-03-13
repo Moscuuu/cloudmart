@@ -82,6 +82,8 @@ jobs:
       - name: Set up pnpm
         if: ${{ inputs.setup_node }}
         uses: pnpm/action-setup@v4
+        with:
+          version: "10.32.0"
 
       - name: Install Node dependencies
         if: ${{ inputs.setup_node }}
@@ -128,6 +130,8 @@ jobs:
       - name: Set up pnpm
         if: ${{ inputs.setup_node }}
         uses: pnpm/action-setup@v4
+        with:
+          version: "10.32.0"
 
       - name: Install Node dependencies
         if: ${{ inputs.setup_node }}
