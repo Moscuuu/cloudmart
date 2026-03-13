@@ -1,6 +1,6 @@
 """Prometheus business metrics for Order Service."""
 
-from prometheus_client import Counter, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, generate_latest
 
 ORDERS_CREATED = Counter(
     "orders_created_total",

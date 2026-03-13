@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from order_service.metrics import ORDERS_CREATED, REVENUE_GAUGE
 from order_service.models.order import Order, OrderStatus
 from order_service.models.order_item import OrderItem
 from order_service.repositories.order_repository import OrderRepository
-from order_service.metrics import ORDERS_CREATED, REVENUE_GAUGE
 from order_service.schemas.order import CreateOrderRequest
 from order_service.services.product_client import ProductClient
 

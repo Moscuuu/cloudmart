@@ -1,7 +1,7 @@
 """Tests for Redis-cached product availability endpoint."""
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from order_service.schemas.inventory import InventoryResponse
 from order_service.services.cache_service import CacheService
-
 
 # ---------------------------------------------------------------------------
 # Unit tests for CacheService
@@ -205,8 +204,8 @@ class TestAvailabilityEndpoint:
         assert response.status_code == 200
 
         data = response.json()
-        assert data["product_id"] == product_id
-        assert data["available_quantity"] == 180
+        assert data["productId"] == product_id
+        assert data["availableQuantity"] == 180
 
         # Verify Redis was populated
         cached = await redis_client.get(f"inventory:{product_id}")
@@ -235,7 +234,7 @@ class TestAvailabilityEndpoint:
         assert response.status_code == 200
 
         data = response.json()
-        assert data["available_quantity"] == 45
+        assert data["availableQuantity"] == 45
 
         # Product Service should NOT have been called
         mock_http.get.assert_not_called()

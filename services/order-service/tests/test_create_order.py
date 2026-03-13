@@ -1,8 +1,7 @@
 """Integration tests for order creation with stock validation."""
 
 import uuid
-from decimal import Decimal
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -11,8 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from order_service.auth.jwt_service import JwtService
-from order_service.models.order import Order, OrderStatus
-from order_service.models.order_item import OrderItem
+from order_service.models.order import Order
 
 
 def _auth_header(

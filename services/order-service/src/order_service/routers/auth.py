@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from order_service.auth.dependencies import get_current_user
 from order_service.auth.events import log_auth_event
-from order_service.auth.jwt_service import JwtService, REFRESH_TOKEN_EXPIRE_DAYS
+from order_service.auth.jwt_service import REFRESH_TOKEN_EXPIRE_DAYS, JwtService
 from order_service.auth.oauth_client import exchange_google_code
 from order_service.auth.rate_limiter import check_login_rate_limit
 from order_service.config import settings

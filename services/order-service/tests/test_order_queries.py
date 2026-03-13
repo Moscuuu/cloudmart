@@ -1,10 +1,8 @@
 """Integration tests for order endpoints with JWT auth and user isolation."""
 
 import uuid
-from decimal import Decimal
 
 import pytest
-from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from order_service.auth.jwt_service import JwtService

@@ -1,20 +1,17 @@
 """Tests for auth module: JWT service, OAuth client, dependencies, rate limiter."""
 
-import time
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
 import pytest
-from fastapi import FastAPI, HTTPException
-from fastapi.testclient import TestClient
+from fastapi import HTTPException
 
 from order_service.auth.dependencies import get_current_user, get_optional_user, require_admin
 from order_service.auth.jwt_service import JwtService
 from order_service.auth.oauth_client import exchange_google_code
 from order_service.auth.rate_limiter import check_login_rate_limit
 from order_service.config import settings
-
 
 # ── JWT Service Tests ──────────────────────────────────────────────────
 

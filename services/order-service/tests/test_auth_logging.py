@@ -3,10 +3,8 @@
 import logging
 
 import pytest
-from prometheus_client import REGISTRY
 
 from order_service.auth.jwt_service import JwtService
-
 
 # ---------------------------------------------------------------------------
 # Unit tests for log_auth_event helper
@@ -103,9 +101,6 @@ class TestAuthEventIntegration:
         self, async_client, caplog
     ):
         """Accessing another user's order logs auth.permission.denied event."""
-        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-        from order_service.models.order import Order, OrderStatus
-        from order_service.models.order_item import OrderItem
 
         # We need to create an order owned by a different user, but the
         # async_client fixture creates tables fresh. We need a session.
@@ -113,6 +108,7 @@ class TestAuthEventIntegration:
         # Instead, we'll mock at the dependency level.
         import uuid
         from unittest.mock import AsyncMock, patch
+
         from order_service.repositories.order_repository import OrderRepository
 
         # Create a mock order owned by someone else

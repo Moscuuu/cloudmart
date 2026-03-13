@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from order_service.config import settings
 from order_service.logging_config import configure_logging
-from order_service.metrics import generate_latest, CONTENT_TYPE_LATEST
+from order_service.metrics import CONTENT_TYPE_LATEST, generate_latest
 from order_service.routers.auth import router as auth_router
 from order_service.routers.availability import router as availability_router
 from order_service.routers.orders import router as orders_router

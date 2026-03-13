@@ -1,7 +1,6 @@
 """Tests for Pub/Sub event publishing on order creation."""
 
 import json
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -10,7 +9,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from order_service.auth.jwt_service import JwtService
-from order_service.models.order import Order, OrderStatus
+from order_service.models.order import OrderStatus
 from order_service.models.order_item import OrderItem
 from order_service.services.pubsub_publisher import PubSubPublisher
 

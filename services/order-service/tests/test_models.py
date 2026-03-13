@@ -2,7 +2,6 @@
 
 import uuid
 
-import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 

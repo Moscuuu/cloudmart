@@ -47,6 +47,7 @@ function FilterPanel({ filters, onFilterChange }: ProductFiltersProps) {
   // Sync parent search value back to local input (e.g. when filters are cleared externally)
   useEffect(() => {
     if (!isLocalChange.current && filters.search !== searchInput) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional sync from parent prop
       setSearchInput(filters.search);
     }
     isLocalChange.current = false;

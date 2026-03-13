@@ -1,6 +1,5 @@
 """Tests for health endpoint and app configuration."""
 
-import pytest
 
 from order_service.main import app
 
