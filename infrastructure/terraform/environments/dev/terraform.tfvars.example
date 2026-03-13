@@ -1,11 +1,12 @@
 # -----------------------------------------------------------------------------
 # Dev Environment - Variable Values
 # -----------------------------------------------------------------------------
-# Development environment: cost-optimized with Spot nodes and minimal sizing.
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit real values.
 # -----------------------------------------------------------------------------
 
-project_id     = "project-0042e987-ac93-43ec-a4f"
-project_number = "715060330394"
+project_id     = "your-gcp-project-id"
+project_number = "123456789012"
 environment    = "dev"
 region         = "us-east1"
 project_name   = "cloudmart"
@@ -21,5 +22,5 @@ spot_nodes   = true
 db_tier = "db-f1-micro"
 
 # Networking
-authorized_cidr = "0.0.0.0/0" # UPDATE: Set to your IP/32 for security
+authorized_cidr = "YOUR_IP/32" # Set to your IP for security
 master_cidr     = "172.16.0.0/28"
