@@ -58,6 +58,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: localdev
       SPRING_DOCKER_COMPOSE_ENABLED: "false"
       OTEL_TRACES_EXPORTER: none
+      JWT_SECRET: ${JWT_SECRET:-change-me-32-bytes-minimum-secret}
     depends_on:
       product-db:
         condition: service_healthy
@@ -75,6 +76,10 @@ services:
       GCP_PROJECT_ID: local-project
       ENVIRONMENT: local
       OTEL_TRACES_EXPORTER: none
+      JWT_SECRET: ${JWT_SECRET:-change-me-32-bytes-minimum-secret}
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
     depends_on:
       order-db:
         condition: service_healthy
@@ -84,7 +89,10 @@ services:
         condition: service_started
 
   frontend:
-    build: services/frontend
+    build:
+      context: services/frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     ports:
       - "3000:80"
     depends_on:

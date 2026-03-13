@@ -7,16 +7,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 
-let useGoogleLoginFn: typeof import('@react-oauth/google').useGoogleLogin | undefined;
-try {
-  // Dynamic import resolved at build time; safe to call at module level
-  // because @react-oauth/google is always installed.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = await import('@react-oauth/google');
-  useGoogleLoginFn = mod.useGoogleLogin;
-} catch {
-  // Falls back to manual sign-in if Google OAuth library is unavailable
-}
+import { useGoogleLogin } from '@react-oauth/google';
 
 const NAV_LINKS = [
   { to: '/products', label: 'Products' },
@@ -27,7 +18,7 @@ function GoogleSignInButton() {
   const { login } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const googleLogin = useGoogleLoginFn?.({
+  const googleLogin = useGoogleLogin({
     flow: 'auth-code',
     onSuccess: async (response) => {
       setIsLoggingIn(true);
@@ -48,14 +39,28 @@ function GoogleSignInButton() {
     <Button
       variant="outline"
       size="sm"
-      onClick={() => googleLogin?.()}
-      disabled={isLoggingIn || !googleLogin}
+      onClick={() => googleLogin()}
+      disabled={isLoggingIn}
       className="cursor-pointer gap-2"
     >
       <LogIn className="h-4 w-4" aria-hidden="true" />
       {isLoggingIn ? 'Signing in...' : 'Sign in'}
     </Button>
   );
+}
+
+/** Renders GoogleSignInButton only when GoogleOAuthProvider is active (VITE_GOOGLE_CLIENT_ID set) */
+function SignInGate() {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    return (
+      <Button variant="outline" size="sm" disabled className="gap-2">
+        <LogIn className="h-4 w-4" aria-hidden="true" />
+        OAuth not configured
+      </Button>
+    );
+  }
+  return <GoogleSignInButton />;
 }
 
 function UserMenu() {
@@ -124,7 +129,7 @@ export function Header() {
           ))}
           <CartDrawer />
           <Separator orientation="vertical" className="mx-1 h-6" />
-          {!isLoading && (isAuthenticated ? <UserMenu /> : <GoogleSignInButton />)}
+          {!isLoading && (isAuthenticated ? <UserMenu /> : <SignInGate />)}
         </nav>
 
         {/* Mobile nav */}
@@ -161,7 +166,7 @@ export function Header() {
                 ))}
                 <Separator className="my-2" />
                 {!isLoading && (
-                  isAuthenticated ? <UserMenu /> : <GoogleSignInButton />
+                  isAuthenticated ? <UserMenu /> : <SignInGate />
                 )}
               </nav>
             </SheetContent>
