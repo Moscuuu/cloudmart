@@ -7,7 +7,7 @@
 
 terraform {
   backend "gcs" {
-    bucket = "cloudmart-tfstate-PROJECT_ID" # Replace PROJECT_ID or use -backend-config
+    bucket = "cloudmart-tfstate-project-0042e987-ac93-43ec-a4f"
     prefix = "env/dev"
   }
 }

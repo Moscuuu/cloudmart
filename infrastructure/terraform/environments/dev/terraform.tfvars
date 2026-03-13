@@ -4,10 +4,11 @@
 # Development environment: cost-optimized with Spot nodes and minimal sizing.
 # -----------------------------------------------------------------------------
 
-project_id   = "your-project-id" # UPDATE: Set to your GCP project ID
-environment  = "dev"
-region       = "us-central1"
-project_name = "cloudmart"
+project_id     = "project-0042e987-ac93-43ec-a4f"
+project_number = "715060330394"
+environment    = "dev"
+region         = "us-east1"
+project_name   = "cloudmart"
 
 # GKE -- small Spot nodes for cost efficiency
 machine_type = "e2-medium"
