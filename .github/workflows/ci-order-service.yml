@@ -19,7 +19,7 @@ jobs:
       service_name: order-service
       service_path: services/order-service
       dockerfile_path: services/order-service/Dockerfile
-      lint_command: "ruff check ."
+      lint_command: "uv run ruff check ."
       test_command: "uv run pytest"
       setup_python: true
     permissions:

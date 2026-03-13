@@ -19,8 +19,8 @@ jobs:
       service_name: product-service
       service_path: services/product-service
       dockerfile_path: services/product-service/Dockerfile
-      lint_command: "./mvnw compile -B -q"
-      test_command: "./mvnw verify -B"
+      lint_command: "mvn compile -B -q"
+      test_command: "mvn verify -B"
       setup_java: true
     permissions:
       contents: write
