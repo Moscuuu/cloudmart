@@ -101,6 +101,11 @@ echo "============================================================"
 echo " [2/5] Gateway API Resources"
 echo "============================================================"
 
+echo "  Ensuring application namespaces exist..."
+for NS in dev staging prod; do
+  kubectl create namespace "${NS}" 2>/dev/null || true
+done
+
 echo "  Applying gateway kustomization..."
 kubectl apply -k k8s/platform/gateway/
 
