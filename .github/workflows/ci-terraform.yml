@@ -11,6 +11,7 @@ on:
   pull_request:
     branches: [main]
     paths: ['infrastructure/terraform/**']
+  workflow_dispatch:
 
 env:
   TF_WORKING_DIR: infrastructure/terraform/environments/dev
