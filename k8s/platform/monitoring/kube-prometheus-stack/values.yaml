@@ -14,9 +14,16 @@
 #
 
 # -- Grafana
+# Admin password: set at install time via --set or a Kubernetes Secret.
+#   helm upgrade --install kube-prometheus-stack ... --set grafana.adminPassword="$(kubectl get secret grafana-admin -n monitoring -o jsonpath='{.data.password}' | base64 -d)"
+# Or create secret first:
+#   kubectl create secret generic grafana-admin -n monitoring --from-literal=password="$(openssl rand -base64 24)"
 grafana:
   enabled: true
-  adminPassword: prom-operator
+  admin:
+    existingSecret: grafana-admin
+    userKey: user
+    passwordKey: password
   service:
     type: LoadBalancer  # Easy access for portfolio demo (same pattern as ArgoCD)
   sidecar:

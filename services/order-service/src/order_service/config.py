@@ -2,6 +2,8 @@
 
 from pydantic_settings import BaseSettings
 
+_DEV_SECRET_MARKER = "dev-secret-change-in-production-min-32-bytes"
+
 
 class Settings(BaseSettings):
     """Order Service configuration.
@@ -17,7 +19,7 @@ class Settings(BaseSettings):
     environment: str = "local"
 
     # Auth settings
-    jwt_secret: str = "dev-secret-change-in-production-min-32-bytes"
+    jwt_secret: str = _DEV_SECRET_MARKER
     oauth_client_id: str = ""
     oauth_client_secret: str = ""
     admin_emails: str = ""
@@ -29,3 +31,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if settings.environment not in ("local", "test") and settings.jwt_secret == _DEV_SECRET_MARKER:
+    raise RuntimeError(
+        "JWT_SECRET must be set to a secure value in non-local environments. "
+        "The dev-default placeholder is not allowed in production."
+    )

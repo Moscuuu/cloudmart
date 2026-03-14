@@ -46,8 +46,18 @@ public class SecurityConfig {
                 .build();
     }
 
+    private static final String DEV_SECRET_MARKER = "dev-secret-change-in-production-min-32-bytes";
+
     @Bean
-    public JwtDecoder jwtDecoder(@Value("${jwt.secret}") String secret) {
+    public JwtDecoder jwtDecoder(
+            @Value("${jwt.secret}") String secret,
+            @Value("${spring.profiles.active:default}") String activeProfiles) {
+        if (!activeProfiles.contains("local") && !activeProfiles.contains("test")
+                && DEV_SECRET_MARKER.equals(secret)) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must be set to a secure value in non-local environments. "
+                    + "The dev-default placeholder is not allowed in production.");
+        }
         SecretKeySpec key = new SecretKeySpec(
                 secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(key)
