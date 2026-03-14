@@ -89,6 +89,7 @@ kubectl run seed-db \
   --namespace="${NAMESPACE}" \
   --rm -i \
   --restart=Never \
+  --labels="app=product-service" \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
   -- psql -h "${DB_HOST}" -U cloudmart -d productdb -v ON_ERROR_STOP=1 < "${DATA_SQL}"
@@ -104,6 +105,7 @@ PRODUCT_COUNT=$(kubectl run verify-seed \
   --namespace="${NAMESPACE}" \
   --rm -i \
   --restart=Never \
+  --labels="app=product-service" \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
   -- psql -h "${DB_HOST}" -U cloudmart -d productdb -t -c "SELECT COUNT(*) FROM products;" 2>/dev/null \
