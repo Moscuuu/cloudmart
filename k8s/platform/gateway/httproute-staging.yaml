@@ -30,7 +30,15 @@ spec:
       backendRefs:
         - name: order-service
           port: 8000
-    # Rule 3 -- Frontend catch-all (must be last)
+    # Rule 3 -- Auth API (login, refresh, logout, profile)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/auth
+      backendRefs:
+        - name: order-service
+          port: 8000
+    # Rule 4 -- Frontend catch-all (must be last)
     - matches:
         - path:
             type: PathPrefix

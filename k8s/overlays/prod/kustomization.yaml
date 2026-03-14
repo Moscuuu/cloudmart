@@ -10,7 +10,10 @@ resources:
   - ../../base/redis
   - ../../base/network-policies
   - ../../base/rbac
-  - ../../base/secrets
+  - nginx-config.yaml
+  # Secrets are NOT included here -- they contain sensitive values and must be
+  # created via create-secrets.sh (reads from terraform outputs) BEFORE applying
+  # this overlay. See create-secrets.sh for usage.
 
 images:
   - name: product-service
@@ -24,6 +27,13 @@ images:
     newTag: latest
 
 patches:
+  # Deployment resource overrides (replicas, resource limits)
   - path: patches/product-service.yaml
   - path: patches/order-service.yaml
   - path: patches/frontend.yaml
+  # ConfigMap overrides (environment-specific values)
+  - path: patches/product-service-config.yaml
+  - path: patches/order-service-config.yaml
+  # ServiceAccount overrides (Workload Identity GSA annotations)
+  - path: patches/product-service-sa.yaml
+  - path: patches/order-service-sa.yaml

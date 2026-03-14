@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-config
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://CLOUD_SQL_IP:5432/productdb"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+  SPRING_CLOUD_GCP_PROJECT_ID: "project-0042e987-ac93-43ec-a4f"
+  OTEL_TRACES_EXPORTER: "none"
+  OTEL_METRICS_EXPORTER: "none"
+  OTEL_LOGS_EXPORTER: "none"

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-config
+data:
+  GCP_PROJECT_ID: "project-0042e987-ac93-43ec-a4f"
+  CORS_ORIGINS: "http://localhost:5173"
+  ENVIRONMENT: "staging"
+  OTEL_TRACES_EXPORTER: "none"
+  OTEL_METRICS_EXPORTER: "none"
+  OTEL_LOGS_EXPORTER: "none"
+  ADMIN_EMAILS: "admin@example.com"

@@ -15,3 +15,11 @@ spec:
             limits:
               cpu: 500m
               memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 18
+            timeoutSeconds: 5
