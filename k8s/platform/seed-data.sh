@@ -4,7 +4,7 @@
 # =============================================================================
 #
 # Seeds the product database with categories, products, and inventory data.
-# Run from the bastion host after the platform is deployed and pods are running.
+# Uses a ConfigMap + Job pattern for reliability (no stdin piping needed).
 #
 # Usage:
 #   ./seed-data.sh [namespace]
@@ -50,74 +50,111 @@ fi
 # ---------------------------------------------------------------------------
 # Extract connection details
 # ---------------------------------------------------------------------------
-echo "[1/3] Reading database credentials from Kubernetes secret..."
+echo "[1/4] Reading database credentials..."
 
 DB_PASSWORD=$(kubectl get secret db-credentials -n "${NAMESPACE}" \
   -o jsonpath='{.data.password}' | base64 -d)
 
-# Get Cloud SQL IP from product-service ConfigMap
 DB_HOST=$(kubectl get configmap product-service-config -n "${NAMESPACE}" \
   -o jsonpath='{.data.SPRING_DATASOURCE_URL}' 2>/dev/null \
   | sed -n 's|jdbc:postgresql://\([^:]*\):.*|\1|p')
 
 if [ -z "${DB_HOST}" ]; then
-  echo "WARNING: Could not extract DB host from ConfigMap. Trying direct IP..."
   DB_HOST=$(kubectl get configmap product-service-config -n "${NAMESPACE}" \
     -o yaml 2>/dev/null | grep -oP '(?<=postgresql://)\d+\.\d+\.\d+\.\d+' | head -1)
 fi
 
 if [ -z "${DB_HOST}" ]; then
-  echo "ERROR: Could not determine Cloud SQL IP. Set DB_HOST manually:"
-  echo "  DB_HOST=10.x.x.x $0 ${NAMESPACE}"
+  echo "ERROR: Could not determine Cloud SQL IP."
   exit 1
 fi
 
 echo "  DB Host: ${DB_HOST}"
-echo "  DB Name: productdb"
-echo "  DB User: cloudmart"
 echo ""
 
 # ---------------------------------------------------------------------------
-# Seed via temporary postgres pod
+# Create ConfigMap from data.sql
 # ---------------------------------------------------------------------------
-echo "[2/3] Seeding database via temporary postgres pod..."
+echo "[2/4] Creating seed-data ConfigMap..."
 
-# Delete leftover pod from previous failed run
-kubectl delete pod seed-db -n "${NAMESPACE}" --ignore-not-found=true 2>/dev/null
-
-kubectl run seed-db \
+kubectl create configmap seed-data \
   --namespace="${NAMESPACE}" \
-  --rm -i \
-  --restart=Never \
-  --labels="app=product-service" \
-  --image=postgres:16-alpine \
-  --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h "${DB_HOST}" -U cloudmart -d productdb -v ON_ERROR_STOP=1 < "${DATA_SQL}"
+  --from-file=data.sql="${DATA_SQL}" \
+  --dry-run=client -o yaml | kubectl apply -f -
 
+# ---------------------------------------------------------------------------
+# Clean up previous runs
+# ---------------------------------------------------------------------------
+echo "[3/4] Running seed Job..."
+
+kubectl delete job seed-db -n "${NAMESPACE}" --ignore-not-found=true 2>/dev/null
+
+# ---------------------------------------------------------------------------
+# Create and run the seed Job
+# ---------------------------------------------------------------------------
+cat <<JOBEOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-db
+  namespace: ${NAMESPACE}
+  labels:
+    app: product-service
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: psql
+        image: postgres:16-alpine
+        env:
+        - name: PGPASSWORD
+          value: "${DB_PASSWORD}"
+        command:
+        - psql
+        - -h
+        - "${DB_HOST}"
+        - -U
+        - cloudmart
+        - -d
+        - productdb
+        - -v
+        - ON_ERROR_STOP=1
+        - -f
+        - /seed/data.sql
+        volumeMounts:
+        - name: seed-sql
+          mountPath: /seed
+          readOnly: true
+      volumes:
+      - name: seed-sql
+        configMap:
+          name: seed-data
+JOBEOF
+
+echo "  Waiting for Job to complete..."
+kubectl wait --for=condition=complete job/seed-db \
+  -n "${NAMESPACE}" --timeout=120s 2>/dev/null \
+  || { echo "  Job did not complete. Checking logs:"; \
+       kubectl logs job/seed-db -n "${NAMESPACE}" 2>/dev/null; exit 1; }
+
+echo "  Job completed successfully."
 echo ""
 
 # ---------------------------------------------------------------------------
-# Verify
+# Show Job logs (seed output)
 # ---------------------------------------------------------------------------
-echo "[3/3] Verifying seed data..."
-
-PRODUCT_COUNT=$(kubectl run verify-seed \
-  --namespace="${NAMESPACE}" \
-  --rm -i \
-  --restart=Never \
-  --labels="app=product-service" \
-  --image=postgres:16-alpine \
-  --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h "${DB_HOST}" -U cloudmart -d productdb -t -c "SELECT COUNT(*) FROM products;" 2>/dev/null \
-  | tr -d '[:space:]')
-
-echo "  Products in database: ${PRODUCT_COUNT}"
+echo "[4/4] Seed results:"
+kubectl logs job/seed-db -n "${NAMESPACE}" 2>/dev/null
 echo ""
 
-if [ "${PRODUCT_COUNT}" -gt 0 ] 2>/dev/null; then
-  echo "Seed complete. ${PRODUCT_COUNT} products loaded."
-else
-  echo "WARNING: Could not verify product count. Check manually:"
-  echo "  kubectl run psql-check --rm -it --restart=Never --image=postgres:16-alpine \\"
-  echo "    --env=\"PGPASSWORD=\${DB_PASSWORD}\" -- psql -h ${DB_HOST} -U cloudmart -d productdb"
-fi
+# ---------------------------------------------------------------------------
+# Clean up
+# ---------------------------------------------------------------------------
+kubectl delete configmap seed-data -n "${NAMESPACE}" --ignore-not-found=true 2>/dev/null
+echo "Seed complete."
