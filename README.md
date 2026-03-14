@@ -186,6 +186,10 @@ make dev-down
 
 ## GCP Deployment
 
+> **Full deployment runbook:** See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the complete, battle-tested guide covering infrastructure, platform stack, database seeding, OAuth, monitoring, and troubleshooting — with every gotcha documented.
+
+The sections below provide a quick overview. For step-by-step instructions with copy-pasteable commands, use the deployment guide.
+
 ### 1. Create GCP Project and Enable APIs
 
 ```bash
@@ -329,7 +333,12 @@ Walk through the Terraform modules:
 
 ## CI/CD Overview
 
-The CI/CD pipeline is implemented with GitHub Actions across multiple workflow files:
+The CI/CD pipeline automates the full path from code push to GKE deployment:
+
+```
+Push to main → CI builds + tests → Docker image pushed to Artifact Registry
+  → Kustomize overlay updated with new image tag → ArgoCD syncs to GKE
+```
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
@@ -341,7 +350,9 @@ The CI/CD pipeline is implemented with GitHub Actions across multiple workflow f
 | `promote-prod.yml` | Manual dispatch | Promote staging images to production overlay |
 | `_build-and-deploy.yml` | Reusable workflow | Shared build, scan, and deploy logic |
 
-Authentication to GCP uses Workload Identity Federation -- no long-lived service account keys.
+**How it works:** Each service CI workflow calls `_build-and-deploy.yml` which builds the Docker image, scans it with Trivy, pushes to Artifact Registry (`us-east1-docker.pkg.dev`), then updates the Kustomize overlay with the new image tag and commits the change. ArgoCD detects the overlay change and syncs the new image to GKE automatically (dev auto-syncs; staging/prod require manual approval).
+
+Authentication to GCP uses Workload Identity Federation — no long-lived service account keys. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full platform deployment walkthrough.
 
 ## Security
 
