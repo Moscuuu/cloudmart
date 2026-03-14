@@ -1,0 +1,49 @@
+# GKE Gateway health check overrides
+#
+# GKE defaults to probing "/" on backend services. Product-service
+# returns 401 (Spring Security) and order-service returns 404 (no root
+# handler), causing the load balancer to mark them unhealthy.
+#
+# These HealthCheckPolicy resources point GKE health checks at the
+# actual readiness endpoints.
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: product-service-healthcheck
+  namespace: dev
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8080
+        requestPath: /actuator/health
+  targetRef:
+    group: ""
+    kind: Service
+    name: product-service
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: order-service-healthcheck
+  namespace: dev
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8000
+        requestPath: /ready
+  targetRef:
+    group: ""
+    kind: Service
+    name: order-service

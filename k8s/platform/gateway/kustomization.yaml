@@ -8,3 +8,4 @@ resources:
   - httproute-dev.yaml
   - httproute-staging.yaml
   - httproute-prod.yaml
+  - healthcheck-policies.yaml
