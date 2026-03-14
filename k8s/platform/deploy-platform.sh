@@ -83,7 +83,7 @@ echo "  Installing cert-manager..."
 helm upgrade --install cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
-  --set crds.installCRDs=true \
+  --set crds.enabled=true \
   --wait \
   --timeout 5m
 
