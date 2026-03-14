@@ -140,3 +140,21 @@ resource "google_compute_firewall" "allow_bastion_ssh" {
 
   description = "Allow SSH access to bastion host from authorized CIDR"
 }
+
+# ---------------------------------------------------------------------------
+# 9. Firewall: allow IAP tunnel access to bastion
+# ---------------------------------------------------------------------------
+resource "google_compute_firewall" "allow_iap_ssh" {
+  name    = "${var.project_name}-allow-iap-ssh"
+  network = google_compute_network.vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["35.235.240.0/20"]
+  target_tags   = ["bastion"]
+
+  description = "Allow SSH via IAP tunnel to bastion host"
+}

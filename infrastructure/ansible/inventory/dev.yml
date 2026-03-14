@@ -12,9 +12,9 @@
 all:
   hosts:
     bastion:
-      ansible_host: "BASTION_IP"  # UPDATE: Set to bastion external IP from tofu output
-      ansible_user: "YOUR_USERNAME"  # UPDATE: Set to OS Login username
-      ansible_ssh_common_args: '-o ProxyCommand="gcloud compute ssh %h --zone=us-central1-a --tunnel-through-iap --command=''nc %r %p''"'
+      ansible_host: "34.75.211.163"  # Bastion external IP from tofu output
+      ansible_user: "needyourcoffe_gmail_com"  # OS Login username
+      ansible_ssh_private_key_file: "~/.ssh/google_compute_engine"
   vars:
     ansible_python_interpreter: /usr/bin/python3
     environment_name: dev

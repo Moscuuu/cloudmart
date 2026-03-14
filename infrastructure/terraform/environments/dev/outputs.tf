@@ -29,6 +29,12 @@ output "database_instance_connection_name" {
   value       = module.database.instance_connection_name
 }
 
+output "db_password" {
+  description = "Database application user password"
+  value       = module.database.db_password
+  sensitive   = true
+}
+
 output "database_private_ip" {
   description = "Private IP address of the Cloud SQL instance"
   value       = module.database.private_ip_address

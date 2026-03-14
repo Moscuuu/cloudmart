@@ -1,5 +1,5 @@
 ---
-# k8s-tools role: install kubectl, helm, argocd CLI, tofu, and gcloud CLI
+# k8s-tools role: install kubectl, helm, argocd CLI, tofu, and gcloud GKE auth plugin
 
 - name: Install kubectl
   ansible.builtin.get_url:
@@ -7,12 +7,31 @@
     dest: /usr/local/bin/kubectl
     mode: "0755"
 
-- name: Download Helm archive
-  ansible.builtin.unarchive:
-    src: "https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz"
-    dest: /tmp
-    remote_src: true
-  notify: move helm binary
+- name: Check if helm is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/helm
+  register: helm_binary
+
+- name: Install Helm
+  when: not helm_binary.stat.exists
+  block:
+    - name: Download and extract Helm archive
+      ansible.builtin.unarchive:
+        src: "https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz"
+        dest: /tmp
+        remote_src: true
+
+    - name: Copy helm binary to /usr/local/bin
+      ansible.builtin.copy:
+        src: /tmp/linux-amd64/helm
+        dest: /usr/local/bin/helm
+        mode: "0755"
+        remote_src: true
+
+    - name: Clean up helm temp directory
+      ansible.builtin.file:
+        path: /tmp/linux-amd64
+        state: absent
 
 - name: Install ArgoCD CLI
   ansible.builtin.get_url:
@@ -20,29 +39,30 @@
     dest: /usr/local/bin/argocd
     mode: "0755"
 
-- name: Download OpenTofu archive
-  ansible.builtin.get_url:
-    url: "https://github.com/opentofu/opentofu/releases/download/v{{ tofu_version }}/tofu_{{ tofu_version }}_linux_amd64.zip"
-    dest: /tmp/tofu.zip
-    mode: "0644"
-  notify: unzip tofu binary
+- name: Install OpenTofu
+  ansible.builtin.unarchive:
+    src: "https://github.com/opentofu/opentofu/releases/download/v{{ tofu_version }}/tofu_{{ tofu_version }}_linux_amd64.zip"
+    dest: /usr/local/bin
+    remote_src: true
+    creates: /usr/local/bin/tofu
+    include:
+      - tofu
 
-- name: Add Google Cloud SDK apt key
-  ansible.builtin.apt_key:
-    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    state: present
+# GCP VMs have gcloud pre-installed via snap — add apt repo for GKE auth plugin
+- name: Download and dearmor Google Cloud apt signing key
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+    creates: /usr/share/keyrings/cloud.google.gpg
 
-- name: Add Google Cloud SDK apt repository
+- name: Add Google Cloud apt repository (signed-by)
   ansible.builtin.apt_repository:
-    repo: "deb https://packages.cloud.google.com/apt cloud-sdk main"
+    repo: "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main"
     state: present
     filename: google-cloud-sdk
 
-- name: Install gcloud CLI and GKE auth plugin
+- name: Install GKE auth plugin via apt
   ansible.builtin.apt:
-    name:
-      - google-cloud-cli
-      - google-cloud-cli-gke-gcloud-auth-plugin
+    name: google-cloud-cli-gke-gcloud-auth-plugin
     state: present
     update_cache: true
 

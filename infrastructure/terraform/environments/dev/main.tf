@@ -38,6 +38,7 @@ module "gke" {
   project_name        = var.project_name
   environment         = var.environment
   region              = var.region
+  zone                = var.zone
   network_id          = module.networking.network_id
   subnet_id           = module.networking.subnet_id
   pods_range_name     = module.networking.pods_range_name
@@ -84,6 +85,7 @@ module "bastion" {
   project_name            = var.project_name
   environment             = var.environment
   region                  = var.region
+  zone                    = var.zone
   subnet_id               = module.networking.subnet_id
   network_id              = module.networking.network_id
   bastion_service_account = module.iam.bastion_service_account_email

@@ -28,6 +28,12 @@ variable "region" {
   default     = "us-central1"
 }
 
+# Zone (zonal GKE + bastion placement — keeps dev under SSD quota)
+variable "zone" {
+  description = "GCP zone for zonal resources (GKE cluster, bastion)"
+  type        = string
+}
+
 # GKE
 variable "machine_type" {
   description = "Machine type for GKE node pool"

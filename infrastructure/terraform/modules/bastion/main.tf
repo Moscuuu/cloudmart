@@ -10,7 +10,7 @@
 resource "google_compute_instance" "bastion" {
   name         = "${var.project_name}-bastion-${var.environment}"
   machine_type = "e2-micro"
-  zone         = "${var.region}-a"
+  zone         = var.zone
 
   boot_disk {
     initialize_params {

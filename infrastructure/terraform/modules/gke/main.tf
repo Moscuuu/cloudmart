@@ -6,7 +6,7 @@
 
 resource "google_container_cluster" "primary" {
   name     = "${var.project_name}-cluster-${var.environment}"
-  location = var.region
+  location = coalesce(var.zone, var.region)
 
   # We remove the default node pool and manage our own separately.
   # This is the recommended pattern to avoid lifecycle conflicts.
@@ -61,7 +61,7 @@ resource "google_container_cluster" "primary" {
 
 resource "google_container_node_pool" "primary" {
   name     = "${var.project_name}-node-pool-${var.environment}"
-  location = var.region
+  location = coalesce(var.zone, var.region)
   cluster  = google_container_cluster.primary.name
 
   node_count = var.node_count

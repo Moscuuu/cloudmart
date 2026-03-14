@@ -16,7 +16,7 @@
     - name: Display installed tool versions
       ansible.builtin.command: "{{ item }}"
       loop:
-        - kubectl version --client --short
+        - kubectl version --client
         - helm version --short
         - argocd version --client
         - tofu version

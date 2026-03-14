@@ -18,6 +18,12 @@ variable "region" {
   type        = string
 }
 
+variable "zone" {
+  description = "GCP zone for zonal cluster (set to make dev cluster single-zone, avoiding SSD quota limits)"
+  type        = string
+  default     = null
+}
+
 variable "network_id" {
   description = "VPC network ID from networking module"
   type        = string

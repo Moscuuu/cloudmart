@@ -13,6 +13,11 @@ variable "region" {
   type        = string
 }
 
+variable "zone" {
+  description = "GCP zone for the bastion host (e.g., us-east1-b)"
+  type        = string
+}
+
 variable "subnet_id" {
   description = "Subnet self_link from networking module"
   type        = string
