@@ -1,5 +1,6 @@
 """FastAPI application for Order Service."""
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -37,16 +38,26 @@ async def lifespan(app: FastAPI):
     # Pub/Sub publisher -- create when emulator is configured or in non-local envs
     app.state.pubsub_publisher = None
     if settings.pubsub_emulator_host or settings.environment != "local":
-        from order_service.services.pubsub_publisher import PubSubPublisher
+        try:
+            from order_service.services.pubsub_publisher import PubSubPublisher
 
-        publisher = PubSubPublisher(settings.gcp_project_id)
-        if settings.pubsub_emulator_host:
-            os.environ.setdefault(
-                "PUBSUB_EMULATOR_HOST", settings.pubsub_emulator_host
+            publisher = await asyncio.wait_for(
+                asyncio.to_thread(PubSubPublisher, settings.gcp_project_id),
+                timeout=10.0,
             )
-            await publisher.ensure_topic()
-        app.state.pubsub_publisher = publisher
-        logger.info("Pub/Sub publisher initialized for project %s", settings.gcp_project_id)
+            if settings.pubsub_emulator_host:
+                os.environ.setdefault(
+                    "PUBSUB_EMULATOR_HOST", settings.pubsub_emulator_host
+                )
+                await publisher.ensure_topic()
+            app.state.pubsub_publisher = publisher
+            logger.info("Pub/Sub publisher initialized for project %s", settings.gcp_project_id)
+        except Exception:
+            logger.warning(
+                "Pub/Sub publisher initialization failed (timeout or credentials). "
+                "Order events will not be published. Fix Workload Identity to enable.",
+                exc_info=True,
+            )
 
     logger.info(
         "Order Service started (OTel auto-instrumentation: %s)",

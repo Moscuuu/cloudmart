@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # Frontend NetworkPolicy
 # Ingress: any source on port 80 (GKE Gateway uses infra-level proxies)
-# Egress: none beyond DNS (static Nginx -- browser makes API calls, not pod)
+# Egress: DNS, product-service (8080), order-service (8000) for Nginx proxy
 # -----------------------------------------------------------------------------
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -15,8 +15,29 @@ spec:
     - Ingress
     - Egress
   ingress:
-    - from:
-        - {}
-      ports:
+    - ports:
         - protocol: TCP
           port: 80
+  egress:
+    # DNS resolution (kube-dns)
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Product service (API proxy)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: product-service
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Order service (API proxy)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: order-service
+      ports:
+        - protocol: TCP
+          port: 8000

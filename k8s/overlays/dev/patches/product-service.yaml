@@ -8,10 +8,21 @@ spec:
     spec:
       containers:
         - name: product-service
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=60.0 -XX:+UseG1GC -Dio.grpc.netty.shaded.io.netty.handler.ssl.noOpenSsl=true"
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 25m
+              memory: 384Mi
             limits:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 500m
+              memory: 768Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 18
+            timeoutSeconds: 5
