@@ -16,7 +16,9 @@ from order_service.models import Base  # noqa: F401 — registers all models
 config = context.config
 
 # Override sqlalchemy.url with the value from our Settings
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Escape % characters to avoid configparser interpolation errors
+# when the database password contains URL-encoded special characters
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
