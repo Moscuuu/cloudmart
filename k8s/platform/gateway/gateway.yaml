@@ -24,15 +24,17 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-    - name: https
-      protocol: HTTPS
-      port: 443
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - kind: Secret
-            name: cloudmart-tls
-            namespace: gateway
-      allowedRoutes:
-        namespaces:
-          from: All
+    # HTTPS listener disabled until a valid GCP-compatible certificate is available.
+    # For production, use a Google-managed certificate or pre-shared cert.
+    # - name: https
+    #   protocol: HTTPS
+    #   port: 443
+    #   tls:
+    #     mode: Terminate
+    #     certificateRefs:
+    #       - kind: Secret
+    #         name: cloudmart-tls
+    #         namespace: gateway
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
