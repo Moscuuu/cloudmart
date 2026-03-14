@@ -7,6 +7,7 @@ on:
   pull_request:
     branches: [main]
     paths: ["services/order-service/**"]
+  workflow_dispatch:
 
 concurrency:
   group: ci-order-${{ github.ref }}

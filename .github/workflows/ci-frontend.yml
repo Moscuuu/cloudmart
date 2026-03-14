@@ -7,6 +7,7 @@ on:
   pull_request:
     branches: [main]
     paths: ["services/frontend/**"]
+  workflow_dispatch:
 
 concurrency:
   group: ci-frontend-${{ github.ref }}
