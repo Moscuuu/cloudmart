@@ -16,6 +16,7 @@
 # -- Grafana
 grafana:
   enabled: true
+  adminPassword: prom-operator
   service:
     type: LoadBalancer  # Easy access for portfolio demo (same pattern as ArgoCD)
   sidecar:
