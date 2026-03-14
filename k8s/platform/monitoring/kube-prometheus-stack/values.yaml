@@ -59,8 +59,8 @@ prometheus:
     retention: 7d
     resources:
       requests:
-        cpu: 200m
-        memory: 512Mi
+        cpu: 50m
+        memory: 256Mi
       limits:
         cpu: 500m
         memory: 1Gi
@@ -72,32 +72,22 @@ alertmanager:
     global:
       resolve_timeout: 5m
     route:
-      receiver: slack-notifications
+      receiver: "null"
       group_by: [alertname]
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h
-      routes:
-        - receiver: slack-notifications
-          matchers:
-            - severity = "critical"
-          group_interval: 2m
-        - receiver: slack-notifications
-          matchers:
-            - severity = "warning"
-          group_interval: 5m
     receivers:
-      - name: slack-notifications
-        slack_configs:
-          - api_url_file: /etc/alertmanager/secrets/slack-webhook/url
-            channel: "#cloudmart-alerts"
-            send_resolved: true
-            title: '{{ .GroupLabels.alertname }}'
-            text: >-
-              {{ range .Alerts }}
-              *{{ .Labels.severity | toUpper }}*: {{ .Annotations.summary }}
-              Dashboard: {{ .Annotations.dashboard }}
-              {{ end }}
+      - name: "null"
+    # To enable Slack alerting:
+    #   1. Apply alerts/slack-webhook-secret.yaml with your webhook URL
+    #   2. Uncomment slack-webhook in alertmanagerSpec.secrets above
+    #   3. Replace "null" receiver with slack-notifications config:
+    #      receivers:
+    #        - name: slack-notifications
+    #          slack_configs:
+    #            - api_url_file: /etc/alertmanager/secrets/slack-webhook/url
+    #              channel: "#cloudmart-alerts"
+    #              send_resolved: true
   alertmanagerSpec:
-    secrets:
-      - slack-webhook  # K8s Secret with key "url" -- create manually before install
+    secrets: []  # Add slack-webhook Secret here when Slack integration is configured
