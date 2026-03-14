@@ -69,6 +69,7 @@ resource "google_container_node_pool" "primary" {
   node_config {
     spot         = var.spot_nodes
     machine_type = var.machine_type
+    disk_size_gb = var.disk_size_gb
 
     service_account = var.node_service_account
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]

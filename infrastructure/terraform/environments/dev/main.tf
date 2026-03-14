@@ -48,6 +48,7 @@ module "gke" {
   machine_type        = var.machine_type
   node_count          = var.node_count
   spot_nodes          = var.spot_nodes
+  disk_size_gb        = var.disk_size_gb
   node_service_account = module.iam.gke_node_service_account_email
 }
 

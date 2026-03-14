@@ -50,6 +50,12 @@ variable "spot_nodes" {
   type        = bool
 }
 
+variable "disk_size_gb" {
+  description = "Boot disk size in GB for GKE node pool VMs"
+  type        = number
+  default     = 100
+}
+
 # Cloud SQL
 variable "db_tier" {
   description = "Cloud SQL machine tier (e.g., db-f1-micro, db-g1-small)"

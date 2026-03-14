@@ -75,6 +75,12 @@ variable "spot_nodes" {
   default     = true
 }
 
+variable "disk_size_gb" {
+  description = "Boot disk size in GB for node pool VMs"
+  type        = number
+  default     = 100
+}
+
 variable "node_service_account" {
   description = "Service account email for GKE nodes from IAM module"
   type        = string
