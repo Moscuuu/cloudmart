@@ -113,6 +113,23 @@ tofu output
 
 > **NOTE: Cloud SQL Soft-Delete.** Cloud SQL instances have deletion protection enabled by default. For dev teardown, set `deletion_protection = false` in tfvars before `tofu destroy`.
 
+> **WARNING: WIF Soft-Delete on Infra Recreate.** When tearing down and recreating infrastructure, Workload Identity Federation pools and providers enter a 30-day soft-delete state. On next `tofu apply`, you get "Error 409: entity already exists" but `tofu import` fails with "non-existent". Fix: undelete the resources first, then import them.
+>
+> ```bash
+> # Undelete the pool and provider
+> gcloud iam workload-identity-pools undelete github-actions \
+>   --location=global
+> gcloud iam workload-identity-pools providers undelete github \
+>   --workload-identity-pool=github-actions \
+>   --location=global
+>
+> # Then import into Terraform state
+> tofu import <pool_resource_address> <pool_id>
+> tofu import <provider_resource_address> <provider_id>
+> ```
+
+> **NOTE: Node Count for Multi-Environment Clusters.** When running dev + staging + prod on the same cluster, you need at least 4 nodes (e2-medium). Set `node_count = 4` in your `terraform.tfvars`. Resource requests for staging and prod overlays should be reduced to dev-level (25m CPU) to fit within node capacity. Redis also needs a resource patch (10m CPU / 32Mi memory).
+
 ---
 
 ## 2. Bastion Host Setup
@@ -208,6 +225,8 @@ kubectl get nodes
 
 > **WARNING: Always use `--internal-ip` flag.** The GKE cluster has no public endpoint. Without `--internal-ip`, `kubectl` will try to connect to a non-existent public endpoint and time out.
 
+> **WARNING: Bastion SA Needs `container.admin`.** The bastion service account requires `roles/container.admin` (not just `container.developer`) to run Helm installs that create ClusterRoleBindings, webhooks, and CRDs (cert-manager, ArgoCD). This is already configured in the Terraform IAM module.
+
 ---
 
 ## 3. Platform Deployment
@@ -220,6 +239,8 @@ The platform deployment script installs the shared infrastructure components in 
 # From repo root on bastion
 ./k8s/platform/deploy-platform.sh
 ```
+
+> **WARNING: deploy-platform.sh SIGPIPE.** The script uses `set -euo pipefail`. Commands like `kubectl cluster-info | head -2` cause SIGPIPE (exit 141) which silently kills the script. This is already fixed in the script with `|| true`.
 
 The script requires database credentials. Either pass them as environment variables or run from the Terraform directory.
 
@@ -280,6 +301,14 @@ kubectl get svc argocd-server -n argocd \
 ```
 
 #### Step 5: Monitoring Stack
+
+> **PREREQUISITE: Create `grafana-admin` secret before installing monitoring.** The kube-prometheus-stack values reference `existingSecret: grafana-admin`. This secret must exist in the monitoring namespace BEFORE running the monitoring install.
+>
+> ```bash
+> kubectl create secret generic grafana-admin -n monitoring \
+>   --from-literal=user=admin \
+>   --from-literal=password=prom-operator
+> ```
 
 Installs the full observability stack via `k8s/platform/monitoring/install.sh`:
 - **kube-prometheus-stack** (Prometheus + Grafana + Alertmanager)
@@ -752,6 +781,33 @@ kubectl logs -n monitoring deployment/alloy-logs --tail=50
 kubectl logs -n monitoring deployment/alloy-traces --tail=50
 ```
 
+### Rolling Update Deadlock with Pending Pods
+
+If old pods are stuck in Pending (e.g., from a previous deployment with higher resource requests), new pods cannot schedule either because the rolling update strategy keeps the old pods alive. This creates a deadlock.
+
+```bash
+# Symptom: all pods stuck in Pending, new ReplicaSets can't scale up
+kubectl get pods -n <namespace>
+
+# Fix: delete all deployments in the namespace, then re-apply
+kubectl delete deployment --all -n <namespace>
+
+# Re-apply the kustomize overlay
+kubectl apply -k k8s/overlays/<env>/
+
+# Watch pods come up
+kubectl get pods -n <namespace> -w
+```
+
+### 3-Environment Resource Sizing
+
+When running dev + staging + prod on the same cluster (4x e2-medium nodes), resource requests must be reduced across all environments to fit. Staging and prod overlays should use dev-level requests (25m CPU). Redis also requires a resource patch (10m CPU / 32Mi memory).
+
+```bash
+# Check total resource requests across all namespaces
+kubectl describe nodes | grep -A 5 "Allocated resources"
+```
+
 ### Resource Pressure on Nodes
 
 ```bash
@@ -804,7 +860,7 @@ Internet
 | Region | `us-east1` |
 | Zone | `us-east1-b` |
 | Bastion | `cloudmart-bastion-dev` (e2-micro) |
-| GKE Cluster | `cloudmart-dev` (3x e2-medium, 50GB SSD) |
+| GKE Cluster | `cloudmart-dev` (3x e2-medium, 50GB SSD; use 4 nodes when running all 3 envs) |
 | Cloud SQL | db-f1-micro, private IP via VPC peering |
 | Artifact Registry | `us-east1-docker.pkg.dev/project-0042e987-ac93-43ec-a4f/cloudmart-docker` |
 
@@ -829,7 +885,13 @@ For quick scanning, here is every gotcha documented in this guide:
 | 13 | Seeding | Alembic `%` in passwords | Fixed in code -- reads URL from env |
 | 14 | OAuth | Google rejects bare IPs | Use nip.io (dashes, not dots) |
 | 15 | OAuth | Missing redirect URI | Add to BOTH origins AND redirect URIs |
+| 16 | Infrastructure | WIF soft-delete on infra recreate | `gcloud iam workload-identity-pools undelete`, then `tofu import` |
+| 17 | Bastion | SA needs `container.admin` for Helm CRDs | Set `roles/container.admin` in IAM module |
+| 18 | Platform | `deploy-platform.sh` SIGPIPE exit 141 | Add `\|\| true` to piped commands under `set -euo pipefail` |
+| 19 | Platform | `grafana-admin` secret must pre-exist | Create secret in monitoring ns before install |
+| 20 | Infrastructure | 3-env cluster needs 4 nodes | Set `node_count = 4`, reduce resource requests to 25m CPU |
+| 21 | Deploy | Rolling update deadlock with Pending pods | `kubectl delete deployment --all -n <ns>`, then re-apply |
 
 ---
 
-*Last updated: 2026-03-14. Generated from battle-tested deployment of CloudMart v1.0.*
+*Last updated: 2026-03-15. Generated from battle-tested deployment of CloudMart v1.0 including full 3-env validation.*
