@@ -1,6 +1,5 @@
 # GSD planning (internal docs, never commit)
 .planning/
-docs/
 
 # Environment files
 .env
