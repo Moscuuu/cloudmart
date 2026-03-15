@@ -65,7 +65,7 @@ if ! kubectl cluster-info &>/dev/null; then
 fi
 
 echo "[pre-flight] Cluster info:"
-kubectl cluster-info 2>&1 | head -2
+kubectl cluster-info 2>&1 | head -2 || true
 echo ""
 
 # ---------------------------------------------------------------------------
