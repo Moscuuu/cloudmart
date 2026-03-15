@@ -6,6 +6,7 @@ data:
   SPRING_DATASOURCE_URL: "jdbc:postgresql://10.185.0.5:5432/productdb"
   SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
   SPRING_CLOUD_GCP_PROJECT_ID: "project-0042e987-ac93-43ec-a4f"
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60.0 -XX:+UseG1GC -Dio.grpc.netty.shaded.io.netty.handler.ssl.noOpenSsl=true"
   OTEL_TRACES_EXPORTER: "none"
   OTEL_METRICS_EXPORTER: "none"
   OTEL_LOGS_EXPORTER: "none"
