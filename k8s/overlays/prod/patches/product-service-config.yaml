@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: product-service-config
 data:
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://CLOUD_SQL_IP:5432/productdb"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://10.185.0.5:5432/productdb"
   SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
   SPRING_CLOUD_GCP_PROJECT_ID: "project-0042e987-ac93-43ec-a4f"
   MANAGEMENT_HEALTH_PUBSUB_ENABLED: "false"
