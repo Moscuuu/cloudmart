@@ -31,6 +31,7 @@ patches:
   - path: patches/product-service.yaml
   - path: patches/order-service.yaml
   - path: patches/frontend.yaml
+  - path: patches/redis.yaml
   # ConfigMap overrides (environment-specific values)
   - path: patches/product-service-config.yaml
   - path: patches/order-service-config.yaml
