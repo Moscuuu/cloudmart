@@ -143,9 +143,9 @@ resource "google_service_account" "bastion" {
   description  = "Service account for bastion host VM with kubectl access"
 }
 
-# Container Developer -- kubectl access to GKE cluster
-resource "google_project_iam_member" "bastion_container_developer" {
+# Container Admin -- full GKE access for helm installs (RBAC, webhooks, CRDs)
+resource "google_project_iam_member" "bastion_container_admin" {
   project = var.project_id
-  role    = "roles/container.developer"
+  role    = "roles/container.admin"
   member  = "serviceAccount:${google_service_account.bastion.email}"
 }
